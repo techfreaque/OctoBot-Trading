@@ -15,44 +15,43 @@
 #  License along with this library.
 
 
-from octobot_trading.exchanges.implementations.cryptofeed_websocket_exchange import (
+from octobot_trading.exchanges.implementations.cryptofeed.cryptofeed_websocket_exchange import (
     CryptofeedWebSocketExchange,
 )
-from octobot_trading.exchanges.implementations import spot_exchange_simulator
-from octobot_trading.exchanges.implementations.spot_exchange_simulator import (
+from octobot_trading.exchanges.implementations.simulator import spot_exchange_simulator, margin_exchange_simulator, \
+    future_exchange_simulator
+from octobot_trading.exchanges.implementations.simulator.spot_exchange_simulator import (
     SpotExchangeSimulator,
 )
-from octobot_trading.exchanges.implementations import future_exchange_simulator
-from octobot_trading.exchanges.implementations.future_exchange_simulator import (
+from octobot_trading.exchanges.implementations.simulator.future_exchange_simulator import (
     FutureExchangeSimulator,
 )
-from octobot_trading.exchanges.implementations import future_ccxt_exchange
-from octobot_trading.exchanges.implementations.future_ccxt_exchange import (
+from octobot_trading.exchanges.implementations.ccxt.future_ccxt_exchange import (
     FutureCCXTExchange,
 )
-from octobot_trading.exchanges.implementations import margin_exchange_simulator
-from octobot_trading.exchanges.implementations.margin_exchange_simulator import (
+from octobot_trading.exchanges.implementations.simulator.margin_exchange_simulator import (
     MarginExchangeSimulator,
 )
-from octobot_trading.exchanges.implementations import margin_ccxt_exchange
-from octobot_trading.exchanges.implementations.margin_ccxt_exchange import (
+from octobot_trading.exchanges.implementations.ccxt.margin_ccxt_exchange import (
     MarginCCXTExchange,
 )
-from octobot_trading.exchanges.implementations import spot_ccxt_exchange
-from octobot_trading.exchanges.implementations.spot_ccxt_exchange import (
+from octobot_trading.exchanges.implementations.ccxt.spot_ccxt_exchange import (
     SpotCCXTExchange,
 )
-from octobot_trading.exchanges.implementations import ccxt_websocket_exchange
-from octobot_trading.exchanges.implementations.ccxt_websocket_exchange import (
+from octobot_trading.exchanges.implementations.ccxt.ccxt_websocket_exchange import (
     CCXTWebSocketExchange,
 )
-from octobot_trading.exchanges.implementations import default_spot_ccxt_exchange
-from octobot_trading.exchanges.implementations.default_spot_ccxt_exchange import (
+from octobot_trading.exchanges.implementations.ccxt.default_spot_ccxt_exchange import (
     DefaultCCXTSpotExchange,
 )
-from octobot_trading.exchanges.implementations import cryptofeed_websocket_exchange
-from octobot_trading.exchanges.implementations.cryptofeed_websocket_exchange import (
+from octobot_trading.exchanges.implementations.cryptofeed import cryptofeed_websocket_exchange
+from octobot_trading.exchanges.implementations.cryptofeed.cryptofeed_websocket_exchange import (
     CryptofeedWebSocketExchange,
+)
+from octobot_trading.exchanges.implementations.ccxt import ccxt_exchange_commons, ccxt_websocket_exchange, \
+    margin_ccxt_exchange, future_ccxt_exchange, spot_ccxt_exchange, default_spot_ccxt_exchange
+from octobot_trading.exchanges.implementations.ccxt.ccxt_exchange_commons import (
+    CCXTExchangeCommons,
 )
 
 __all__ = [
@@ -65,4 +64,5 @@ __all__ = [
     "CCXTWebSocketExchange",
     "DefaultCCXTSpotExchange",
     "CryptofeedWebSocketExchange",
+    "CCXTExchangeCommons",
 ]

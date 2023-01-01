@@ -1,4 +1,5 @@
-#  Drakkar-Software OctoBot-Private-Tentacles
+# cython: language_level=3
+#  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
 #  This library is free software; you can redistribute it and/or
@@ -9,24 +10,15 @@
 #  This library is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#  Lesser General Public License for more details.
+#  Lesser General License for more details.
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.enums
-import octobot_trading.exchanges.implementations.spot_ccxt_exchange as spot_ccxt_exchange
+cimport octobot_trading.exchanges.types as exchanges_types
+from octobot_trading.exchanges.implementations cimport ccxt_exchange_commons
 
 
-#TODO remove
-class DefaultCCXTSpotExchange(spot_ccxt_exchange.SpotCCXTExchange):
-    @classmethod
-    def get_name(cls) -> str:
-        return cls.__name__
-
-    @classmethod
-    def is_default_exchange(cls) -> bool:
-        return True
-
-    async def switch_to_account(self, account_type: octobot_trading.enums.AccountTypes):
-        # Currently not supported
-        pass
+cdef class FutureCCXTExchange(exchanges_types.FutureExchange, 
+                              ccxt_exchange_commons.CCXTExchangeCommons):
+    # cpdef str get_default_type(self)   generating a segfault on exchange that both extend spot and future exchanges
+    cpdef str get_pair_market_type(self, str pair, str property_name, bint def_value=*)

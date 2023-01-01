@@ -14,16 +14,15 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-import octobot_trading.exchanges.connectors.ccxt_websocket_connector as ccxt_websocket_connector
+import octobot_trading.exchanges.connectors.cryptofeed.cryptofeed_websocket_connector as cryptofeed_websocket_connector
 import octobot_trading.exchanges.types as exchanges_types
 import octobot_tentacles_manager.api as api
 
 
-#TODO remove?
-class CCXTWebSocketExchange(exchanges_types.WebSocketExchange):
+class CryptofeedWebSocketExchange(exchanges_types.WebSocketExchange):
     @staticmethod
     def get_websocket_client(config, exchange_manager):
-        return CCXTWebSocketExchange(config, exchange_manager)
+        return CryptofeedWebSocketExchange(config, exchange_manager)
 
     @classmethod
     def get_exchange_connector_class(cls, exchange_manager: object):
@@ -31,7 +30,7 @@ class CCXTWebSocketExchange(exchanges_types.WebSocketExchange):
             name=exchange_manager.exchange_name,
             tentacles_setup_config=exchange_manager.tentacles_setup_config,
             with_class_method=cls.get_class_method_name_to_get_compatible_websocket(exchange_manager),
-            parent_class=ccxt_websocket_connector.CCXTWebsocketConnector
+            parent_class=cryptofeed_websocket_connector.CryptofeedWebsocketConnector
         )
 
     def create_feeds(self):
@@ -39,6 +38,5 @@ class CCXTWebSocketExchange(exchanges_types.WebSocketExchange):
             connector = self.websocket_connector(config=self.config, exchange_manager=self.exchange_manager)
             connector.initialize(pairs=self.pairs, time_frames=self.time_frames, channels=self.channels)
             self.websocket_connectors.append(connector)
-
         except ValueError as e:
             self.logger.exception(e, True, f"Fail to create feed : {e}")

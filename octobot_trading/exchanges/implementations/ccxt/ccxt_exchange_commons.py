@@ -33,8 +33,7 @@ import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 
 
-#TODO remove
-class SpotCCXTExchange(exchanges_types.SpotExchange):
+class CCXTExchangeCommons(exchanges_types.SpotExchange):
     ORDER_NON_EMPTY_FIELDS = [ecoc.ID.value, ecoc.TIMESTAMP.value, ecoc.SYMBOL.value, ecoc.TYPE.value,
                               ecoc.SIDE.value, ecoc.PRICE.value, ecoc.AMOUNT.value, ecoc.STATUS.value]
     ORDER_REQUIRED_FIELDS = ORDER_NON_EMPTY_FIELDS + [ecoc.REMAINING.value]
@@ -375,7 +374,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
     def get_pair_from_exchange(self, pair) -> str:
         return self.connector.get_pair_from_exchange(pair)
 
-    def get_split_pair_from_exchange(self, pair) -> (str, str):
+    def get_split_pair_from_exchange(self, pair) -> typing.Tuple[str, str]:
         return self.connector.get_split_pair_from_exchange(pair)
 
     def get_exchange_pair(self, pair) -> str:

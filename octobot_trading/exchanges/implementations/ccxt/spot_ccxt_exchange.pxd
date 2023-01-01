@@ -14,9 +14,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.exchanges.types as exchanges_types
-cimport octobot_trading.exchanges.implementations as exchange_implementations
+from octobot_trading.exchanges.implementations cimport ccxt_exchange_commons
 
 
-cdef class MarginCCXTExchange(exchanges_types.MarginExchange):
+cdef class SpotCCXTExchange(ccxt_exchange_commons.CCXTExchangeCommons):
+    # cpdef str get_default_type(self)   generating a segfault on exchange that both extend spot and future exchanges
     pass

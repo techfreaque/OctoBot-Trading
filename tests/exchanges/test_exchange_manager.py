@@ -21,7 +21,7 @@ from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.api.exchange import cancel_ccxt_throttle_task
 from octobot_trading.exchanges.types.spot_exchange import SpotExchange
-from octobot_trading.exchanges.implementations.spot_exchange_simulator import SpotExchangeSimulator
+from octobot_trading.exchanges.implementations.simulator.spot_exchange_simulator import SpotExchangeSimulator
 from tests import event_loop
 
 # All test coroutines will be treated as marked.
