@@ -314,7 +314,8 @@ class Trader(util.Initializable):
                         order_status = await self.exchange_manager.exchange.cancel_order(order.order_id, order.symbol)
                     except errors.NotSupported:
                         raise
-                    except (errors.OrderCancelError, Exception) as err:
+                    except (errors.OrderToEditNotFoundError, 
+                            errors.OrderCancelUnknownError, Exception) as err:
                         # retry to cancel order
                         self.logger.debug(f"Failed to cancel order ({err}), retrying")
                         order_status = await self.exchange_manager.exchange.cancel_order(order.order_id, order.symbol)

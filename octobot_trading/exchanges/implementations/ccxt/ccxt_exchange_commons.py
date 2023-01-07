@@ -14,228 +14,262 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import contextlib
 import decimal
 import typing
-import copy
 
-import ccxt.async_support as ccxt
 import octobot_commons.enums as common_enums
-
-from octobot_commons import number_util
-
 import octobot_trading.enums as enums
-import octobot_trading.errors as errors
+import octobot_trading.exchanges.connectors.ccxt.exchange_settings_ccxt_generic as exchange_settings_ccxt_generic
+import octobot_trading.exchanges.connectors.exchange_settings as exchange_settings
+import octobot_trading.exchanges.connectors.ccxt.ccxt_exchange_ui_settings as ccxt_exchange_ui_settings
 import octobot_trading.exchanges.types as exchanges_types
-import octobot_trading.exchanges.util as exchanges_util
 import octobot_trading.exchanges.connectors as exchange_connectors
-import octobot_trading.personal_data as personal_data
-from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 
 
 class CCXTExchangeCommons(exchanges_types.SpotExchange):
-    ORDER_NON_EMPTY_FIELDS = [ecoc.ID.value, ecoc.TIMESTAMP.value, ecoc.SYMBOL.value, ecoc.TYPE.value,
-                              ecoc.SIDE.value, ecoc.PRICE.value, ecoc.AMOUNT.value, ecoc.STATUS.value]
-    ORDER_REQUIRED_FIELDS = ORDER_NON_EMPTY_FIELDS + [ecoc.REMAINING.value]
     CONNECTOR_CLASS = exchange_connectors.CCXTExchange
+    CONNECTOR_CONFIG_CLASS: exchange_settings.ExchangeConfig = (
+        exchange_settings_ccxt_generic.GenericCCXTExchangeConfig
+    )
+    CONNECTOR_CONFIG: exchange_settings.ExchangeConfig = None
 
     def __init__(self, config, exchange_manager):
+        self.initialize_connector_config()
         super().__init__(config, exchange_manager)
         self.connector = self.CONNECTOR_CLASS(
             config,
             exchange_manager,
-            additional_ccxt_config=self.get_additional_connector_config()
+            additional_ccxt_config=self.get_additional_connector_config(),
+            connector_config=self.CONNECTOR_CONFIG,
         )
 
-        self.connector.client.options['defaultType'] = self.get_default_type()
+        self.connector.client.options["defaultType"] = self.get_default_type()
+
+    @classmethod
+    def initialize_connector_config(cls):
+        cls.CONNECTOR_CONFIG = cls.CONNECTOR_CONFIG_CLASS(cls.CONNECTOR_CLASS)
 
     async def initialize_impl(self):
         await self.connector.initialize()
         self.symbols = self.connector.symbols
         self.time_frames = self.connector.time_frames
 
+    @classmethod
+    def init_user_inputs(cls, inputs: dict) -> None:
+        """
+        Called at constructor, should define all the exchange's user inputs.
+        """
+        if not cls.CONNECTOR_CONFIG.is_fully_tested_and_supported():
+            ccxt_exchange_ui_settings.initialize_experimental_exchange_settings(
+                cls, inputs
+            )
+
+    @classmethod
+    def is_configurable(cls):
+        return True
+
     async def stop(self) -> None:
         await self.connector.stop()
         self.exchange_manager = None
 
     @classmethod
-    def is_supporting_exchange(cls, exchange_candidate_name) -> bool:    # move to connector
-        return cls.CONNECTOR_CLASS.is_supporting_exchange(exchange_candidate_name)
+    def is_supporting_exchange(
+            cls, exchange_candidate_name
+    ) -> bool:  # move to connector
+        return (
+                cls.CONNECTOR_CLASS.is_supporting_exchange(exchange_candidate_name)
+                or cls.get_name() == exchange_candidate_name
+        )
 
     def get_default_type(self):
         # keep default value
         return self.connector.client.options['defaultType']
 
+    async def parse_order(self, raw_order: dict, order_type: str = None,
+                          quantity: decimal.Decimal = None, price: decimal.Decimal = None,
+                          status: str = None, symbol: str = None,
+                          side: str = None, timestamp: int or float = None,
+                          check_completeness: bool = True) -> dict:
+        """
+        use this method to parse a single order
+
+        :param raw_order:
+
+        optional:
+        :param status: to use if it's missing in the order
+        :param order_type: to use if it's missing in the order
+        :param price: to use if it's missing in the order
+        :param quantity: to use if it's missing in the order
+        :param symbol: to use if it's missing in the order
+        :param side: to use if it's missing in the order
+        :param timestamp: to use if it's missing in the order
+
+        :param check_completeness: if true checks all attributes, 
+            if somethings missing it'll try to fetch it from the exchange
+
+        :return: formatted order dict (100% complete or we raise NotImplemented)
+        """
+        _parser = self.CONNECTOR_CONFIG.ORDERS_PARSER(self.exchange_manager.exchange)
+        return await _parser.parse_order(raw_order, order_type=order_type, quantity=quantity,
+                                         price=price, status=status, symbol=symbol, side=side,
+                                         timestamp=timestamp, check_completeness=check_completeness)
+
+    async def parse_orders(self, raw_orders: list, order_type: str = None,
+                           quantity: decimal.Decimal = None, price: decimal.Decimal = None,
+                           status: str = None, symbol: str = None,
+                           side: str = None, timestamp: int or float = None,
+                           check_completeness: bool = True) -> list:
+        """
+        use this method to format a list of order dicts
+
+        :param raw_orders: raw orders with eventually missing data
+
+        optional:
+        :param status: to use if it's missing in the order
+        :param order_type: to use if it's missing in the order
+        :param price: to use if it's missing in the order
+        :param quantity: to use if it's missing in the order
+        :param symbol: to use if it's missing in the order
+        :param side: to use if it's missing in the order
+        :param timestamp: to use if it's missing in the order
+
+        :param check_completeness: if true checks all attributes, 
+            if somethings missing it'll try to fetch it from the exchange
+
+        :return: formatted orders list (100% complete or we raise NotImplemented report)
+            
+        """
+        _parser = self.CONNECTOR_CONFIG.ORDERS_PARSER(self.exchange_manager.exchange)
+        return await _parser.parse_orders(raw_orders, order_type=order_type, quantity=quantity,
+                                          price=price, status=status, symbol=symbol, side=side,
+                                          timestamp=timestamp, check_completeness=check_completeness)
+
+    async def parse_trade(self, raw_trade: dict, check_completeness: bool = True) -> dict:
+        """
+        use this method to parse a single trade
+
+        :param raw_trade:
+
+        :param check_completeness: if true checks all attributes, 
+            if somethings missing it'll try to fetch it from the exchange
+
+        :return: formatted trade dict (100% complete or we raise NotImplemented)
+        """
+        _parser = self.CONNECTOR_CONFIG.TRADES_PARSER(self.exchange_manager.exchange)
+        return await _parser.parse_trade(raw_trade, check_completeness=check_completeness)
+
+    async def parse_trades(self, raw_trades, check_completeness: bool = True) -> list:
+        """
+        use this method to format a list of trade dicts
+
+        :param raw_trades: raw trades with eventually missing data
+
+        :param check_completeness: if true checks all attributes, 
+            if somethings missing it'll try to fetch it from the exchange
+
+        :return: formatted trades list (100% complete or we raise NotImplemented report)
+            
+        """
+        _parser = self.CONNECTOR_CONFIG.TRADES_PARSER(self.exchange_manager.exchange)
+        return await _parser.parse_trades(raw_trades, check_completeness=check_completeness)
+
+    async def parse_position(self, raw_position: dict) -> dict:
+        """
+        use this method to parse a single position
+
+        :param raw_position:
+
+        :return: formatted position dict (100% complete or we raise NotImplemented)
+        """
+        _parser = self.CONNECTOR_CONFIG.POSITIONS_PARSER(self.exchange_manager.exchange)
+        return await _parser.parse_position(raw_position)
+
+    async def parse_positions(self, raw_positions: list) -> list:
+        """
+        use this method to format a list of position dicts
+
+        :param raw_positions: raw positions with eventually missing data
+
+        :return: formatted positions list (100% complete or we raise NotImplemented report)
+            
+        """
+        _parser = self.CONNECTOR_CONFIG.POSITIONS_PARSER(self.exchange_manager.exchange)
+        return await _parser.parse_positions(raw_positions)
+
+    async def parse_ticker(self, raw_ticker: dict, symbol: str) -> dict:
+        _parser = self.CONNECTOR_CONFIG.TICKER_PARSER(self.exchange_manager.exchange)
+        return await _parser.parse_ticker(
+            raw_ticker=raw_ticker, symbol=symbol)
+
+    async def parse_tickers(self, raw_tickers: list) -> list:
+        _parser = self.CONNECTOR_CONFIG.TICKER_PARSER(self.exchange_manager.exchange)
+        return await _parser.parse_ticker_list(raw_tickers=raw_tickers)
+
+    def parse_funding_rates(self, raw_funding_rates: list) -> list:
+        _parser = self.CONNECTOR_CONFIG.FUNDING_RATE_PARSER(self.exchange_manager.exchange)
+        return _parser.parse_funding_rates(raw_funding_rates=raw_funding_rates)
+
+    def parse_funding_rate(self, raw_funding_rate: dict, from_ticker: bool = False) -> dict:
+        _parser = self.CONNECTOR_CONFIG.FUNDING_RATE_PARSER(self.exchange_manager.exchange)
+        return _parser.parse_funding_rate(raw_funding_rate=raw_funding_rate, from_ticker=from_ticker)
+
+    def parse_market_status(self, raw_market_status: dict, with_fixer: bool, price_example) -> dict:
+        return self.CONNECTOR_CONFIG.MARKET_STATUS_PARSER(
+            market_status=raw_market_status, with_fixer=with_fixer, price_example=price_example
+        ).market_status
+
     async def create_order(self, order_type: enums.TraderOrderType, symbol: str, quantity: decimal.Decimal,
                            price: decimal.Decimal = None, stop_price: decimal.Decimal = None,
                            side: enums.TradeOrderSide = None, current_price: decimal.Decimal = None,
-                           params: dict = None) \
-            -> typing.Optional[dict]:
-        async with self._order_operation(order_type, symbol, quantity, price, stop_price):
-            created_order = await self._create_order_with_retry(order_type, symbol, quantity,
-                                                                price, side, current_price, params)
-            self.logger.debug(f"Created order: {created_order}")
-            return await self._verify_order(created_order, order_type, symbol, price)
-        return None
+                           params: dict = None) -> dict:
+        return await self.connector.create_order(
+            order_type=order_type, symbol=symbol, quantity=quantity, price=price,
+            stop_price=stop_price, side=side, current_price=current_price, params=params)
 
     async def edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
                          quantity: decimal.Decimal, price: decimal.Decimal,
                          stop_price: decimal.Decimal = None, side: enums.TradeOrderSide = None,
                          current_price: decimal.Decimal = None,
-                         params: dict = None):
-        # Note: on most exchange, this implementation will just replace the order by cancelling the one
-        # which id is given and create a new one
-        async with self._order_operation(order_type, symbol, quantity, price, stop_price):
-            float_quantity = float(quantity)
-            float_price = float(price)
-            float_stop_price = None if stop_price is None else float(stop_price)
-            float_current_price = None if current_price is None else float(current_price)
-            side = None if side is None else side.value
-            params = {} if params is None else params
-            params.update(self.exchange_manager.exchange_backend.get_orders_parameters(None))
-            edited_order = await self._edit_order(order_id, order_type, symbol, quantity=float_quantity,
-                                                  price=float_price, stop_price=float_stop_price, side=side,
-                                                  current_price=float_current_price, params=params)
-            return await self._verify_order(edited_order, order_type, symbol, price)
-        return None
+                         params: dict = None) -> dict:
+        return await self.connector.edit_order(
+            order_id=order_id, order_type=order_type, symbol=symbol, quantity=quantity,
+            price=price, stop_price=stop_price, side=side, current_price=current_price, params=params)
 
-    async def _edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
-                          quantity: float, price: float, stop_price: float = None, side: str = None,
-                          current_price: float = None, params: dict = None):
-        ccxt_order_type = self.connector.get_ccxt_order_type(order_type)
-        price_to_use = price
-        if ccxt_order_type == enums.TradeOrderType.MARKET.value:
-            # can't set price in market orders
-            price_to_use = None
-        # do not use keyword arguments here as default ccxt edit order is passing *args (and not **kwargs)
-        return await self.connector.client.edit_order(order_id, symbol, ccxt_order_type, side,
-                                                      quantity, price_to_use, params)
+    async def create_market_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
+        return await self.connector.create_market_buy_order(
+            symbol=symbol, quantity=quantity, price=price, params=params)
 
-    @contextlib.asynccontextmanager
-    async def _order_operation(self, order_type, symbol, quantity, price, stop_price):
-        try:
-            yield
-        except ccxt.InsufficientFunds as e:
-            self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
-            self.logger.warning(str(e))
-            raise errors.MissingFunds(e)
-        except ccxt.NotSupported:
-            raise errors.NotSupported
-        except Exception as e:
-            self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
-            self.logger.exception(e, False, f"Unexpected error during order operation: {e}")
+    async def create_limit_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
+        return await self.connector.create_limit_buy_order(
+            symbol=symbol, quantity=quantity, price=price, params=params)
 
-    async def _verify_order(self, created_order, order_type, symbol, price, params=None):
-        # some exchanges are not returning the full order details on creation: fetch it if necessary
-        if created_order and not self._ensure_order_details_completeness(created_order):
-            if ecoc.ID.value in created_order:
-                params = params or {}
-                created_order = await self.exchange_manager.exchange.get_order(
-                    created_order[ecoc.ID.value], symbol=symbol, params=params
-                )
+    async def create_market_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
+        return await self.connector.create_market_sell_order(
+            symbol=symbol, quantity=quantity, price=price, params=params)
 
-        # on some exchange, market order are not including price, add it manually to ensure uniformity
-        if created_order[ecoc.PRICE.value] is None and price is not None:
-            created_order[ecoc.PRICE.value] = float(price)
+    async def create_limit_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
+        return await self.connector.create_limit_sell_order(
+            symbol=symbol, quantity=quantity, price=price, params=params)
 
-        return self.clean_order(created_order)
+    async def create_market_stop_loss_order(self, symbol, quantity, price, side, current_price, params=None) -> dict:
+        return await self.connector.create_market_stop_loss_order(
+            symbol=symbol, quantity=quantity, price=price, side=side, current_price=current_price, params=params)
 
-    async def _create_order_with_retry(self, order_type, symbol, quantity: decimal.Decimal,
-                                       price: decimal.Decimal, side: enums.TradeOrderSide,
-                                       current_price: decimal.Decimal, params) -> dict:
-        try:
-            return await self._create_specific_order(order_type, symbol, quantity, price=price, side=side,
-                                                     current_price=current_price, params=params)
-        except (ccxt.InvalidOrder, ccxt.BadRequest) as e:
-            # can be raised when exchange precision/limits rules change
-            self.logger.debug(f"Failed to create order ({e}) : order_type: {order_type}, symbol: {symbol}. "
-                              f"This might be due to an update on {self.name} market rules. Fetching updated rules.")
-            await self.connector.client.load_markets(reload=True)
-            # retry order creation with updated markets (ccxt will use the updated market values)
-            return await self._create_specific_order(order_type, symbol, quantity, price=price, side=side,
-                                                     current_price=current_price, params=params)
+    async def create_limit_stop_loss_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+        return await self.connector.create_limit_stop_loss_order(
+            symbol=symbol, quantity=quantity, price=price, side=side, params=params)
 
-    def _ensure_order_details_completeness(self, order, order_required_fields=None, order_non_empty_fields=None):
-        if order_required_fields is None:
-            order_required_fields = self.ORDER_REQUIRED_FIELDS
-        if order_non_empty_fields is None:
-            order_non_empty_fields = self.ORDER_NON_EMPTY_FIELDS
-        # ensure all order_required_fields are present and all order_non_empty_fields are not empty
-        return all(key in order for key in order_required_fields) and \
-            all(order[key] for key in order_non_empty_fields)
+    async def create_market_take_profit_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+        raise NotImplementedError("create_market_take_profit_order is not implemented")
 
-    async def _create_specific_order(self, order_type, symbol, quantity: decimal.Decimal, price: decimal.Decimal = None,
-                                     side: enums.TradeOrderSide = None, current_price: decimal.Decimal = None,
-                                     params=None) -> dict:
-        created_order = None
-        float_quantity = float(quantity)
-        float_price = float(price)
-        float_current_price = float(current_price)
-        side = None if side is None else side.value
-        params = {} if params is None else params
-        params.update(self.exchange_manager.exchange_backend.get_orders_parameters(None))
-        if order_type == enums.TraderOrderType.BUY_MARKET:
-            created_order = await self._create_market_buy_order(symbol, float_quantity, price=float_price,
-                                                                params=params)
-        elif order_type == enums.TraderOrderType.BUY_LIMIT:
-            created_order = await self._create_limit_buy_order(symbol, float_quantity, price=float_price,
-                                                               params=params)
-        elif order_type == enums.TraderOrderType.SELL_MARKET:
-            created_order = await self._create_market_sell_order(symbol, float_quantity, price=float_price,
-                                                                 params=params)
-        elif order_type == enums.TraderOrderType.SELL_LIMIT:
-            created_order = await self._create_limit_sell_order(symbol, float_quantity, price=float_price,
-                                                                params=params)
-        elif order_type == enums.TraderOrderType.STOP_LOSS:
-            created_order = await self._create_market_stop_loss_order(symbol, float_quantity, price=float_price,
-                                                                      side=side, current_price=float_current_price,
-                                                                      params=params)
-        elif order_type == enums.TraderOrderType.STOP_LOSS_LIMIT:
-            created_order = await self._create_limit_stop_loss_order(symbol, float_quantity, price=float_price,
-                                                                     side=side, params=params)
-        elif order_type == enums.TraderOrderType.TAKE_PROFIT:
-            created_order = await self._create_market_take_profit_order(symbol, float_quantity, price=float_price,
-                                                                        side=side, params=params)
-        elif order_type == enums.TraderOrderType.TAKE_PROFIT_LIMIT:
-            created_order = await self._create_limit_take_profit_order(symbol, float_quantity, price=float_price,
-                                                                       side=side, params=params)
-        elif order_type == enums.TraderOrderType.TRAILING_STOP:
-            created_order = await self._create_market_trailing_stop_order(symbol, float_quantity, price=float_price,
-                                                                          side=side, params=params)
-        elif order_type == enums.TraderOrderType.TRAILING_STOP_LIMIT:
-            created_order = await self._create_limit_trailing_stop_order(symbol, float_quantity, price=float_price,
-                                                                         side=side, params=params)
-        return created_order
+    async def create_limit_take_profit_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+        raise NotImplementedError("create_limit_take_profit_order is not implemented")
 
-    async def _create_market_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return await self.connector.client.create_market_buy_order(symbol, quantity, params=params)
+    async def create_market_trailing_stop_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+        raise NotImplementedError("create_market_trailing_stop_order is not implemented")
 
-    async def _create_limit_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return await self.connector.client.create_limit_buy_order(symbol, quantity, price, params=params)
-
-    async def _create_market_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return await self.connector.client.create_market_sell_order(symbol, quantity, params=params)
-
-    async def _create_limit_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return await self.connector.client.create_limit_sell_order(symbol, quantity, price, params=params)
-
-    async def _create_market_stop_loss_order(self, symbol, quantity, price, side, current_price, params=None) -> dict:
-        raise NotImplementedError("_create_market_stop_loss_order is not implemented")
-
-    async def _create_limit_stop_loss_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
-        raise NotImplementedError("_create_limit_stop_loss_order is not implemented")
-
-    async def _create_market_take_profit_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
-        raise NotImplementedError("_create_market_take_profit_order is not implemented")
-
-    async def _create_limit_take_profit_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
-        raise NotImplementedError("_create_limit_take_profit_order is not implemented")
-
-    async def _create_market_trailing_stop_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
-        raise NotImplementedError("_create_market_trailing_stop_order is not implemented")
-
-    async def _create_limit_trailing_stop_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
-        raise NotImplementedError("_create_limit_trailing_stop_order is not implemented")
+    async def create_limit_trailing_stop_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+        raise NotImplementedError("create_limit_trailing_stop_order is not implemented")
 
     def get_exchange_current_time(self):
         return self.connector.get_exchange_current_time()
@@ -244,53 +278,16 @@ class CCXTExchangeCommons(exchanges_types.SpotExchange):
         return self.connector.get_uniform_timestamp(timestamp)
 
     def get_market_status(self, symbol, price_example=None, with_fixer=True):
-        """
-        Override using get_fixed_market_status in exchange tentacle if the default market status is not as expected
-        """
         return self.connector.get_market_status(symbol, price_example=price_example, with_fixer=with_fixer)
 
-    def get_fixed_market_status(self, symbol, price_example=None, with_fixer=True, remove_price_limits=False):
-        """
-        Use this method in local get_market_status overrides when market status has to be fixed by
-        calling _fix_market_status.
-        Changes PRECISION_AMOUNT and PRECISION_PRICE from decimals to integers
-        (use number of digits instead of price example) by default.
-        Override _fix_market_status to change other elements
-        """
-        market_status = self._fix_market_status(
-            copy.deepcopy(
-                self.connector.get_market_status(symbol, with_fixer=False)
-            ),
-            remove_price_limits=remove_price_limits
-        )
-        if with_fixer:
-            return exchanges_util.ExchangeMarketStatusFixer(market_status, price_example).market_status
-        return market_status
-
-    def _fix_market_status(self, market_status, remove_price_limits=False):
-        """
-        Overrite if necessary
-        """
-        market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
-            enums.ExchangeConstantsMarketStatusColumns.PRECISION_AMOUNT.value] = number_util.get_digits_count(
-            market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
-                enums.ExchangeConstantsMarketStatusColumns.PRECISION_AMOUNT.value]
-        )
-        market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
-            enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value] = number_util.get_digits_count(
-            market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
-                enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value]
-        )
-        if remove_price_limits:
-            market_status[enums.ExchangeConstantsMarketStatusColumns.LIMITS.value][
-                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE.value][
-                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MIN.value] = None
-            market_status[enums.ExchangeConstantsMarketStatusColumns.LIMITS.value][
-                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE.value][
-                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MAX.value] = None
-
-        return market_status
-
+    async def get_withdrawals(
+        self, asset: str = None, since: int or float = None, **kwargs: dict):
+        return await self.connector.get_withdrawals(asset, since=since, **kwargs)
+    
+    async def get_deposits(
+        self, asset: str = None, since: int or float = None, **kwargs: dict):
+        return await self.connector.get_deposits(asset, since=since, **kwargs)
+    
     async def get_balance(self, **kwargs: dict):
         return await self.connector.get_balance(**kwargs)
 
@@ -298,69 +295,84 @@ class CCXTExchangeCommons(exchanges_types.SpotExchange):
                                 **kwargs: dict) -> typing.Optional[list]:
         return await self.connector.get_symbol_prices(symbol=symbol, time_frame=time_frame, limit=limit, **kwargs)
 
-    async def get_kline_price(self, symbol: str, time_frame: common_enums.TimeFrames, **kwargs: dict) -> typing.Optional[list]:
+    async def get_kline_price(self, symbol: str, time_frame: common_enums.TimeFrames, **kwargs: dict
+                              ) -> typing.Optional[list]:
         return await self.connector.get_kline_price(symbol=symbol, time_frame=time_frame, **kwargs)
 
     async def get_order_book(self, symbol: str, limit: int = 5, **kwargs: dict) -> typing.Optional[dict]:
         return await self.connector.get_order_book(symbol=symbol, limit=limit, **kwargs)
 
-    async def get_recent_trades(self, symbol: str, limit: int = 50, **kwargs: dict) -> typing.Optional[list]:
-        return await self.connector.get_recent_trades(symbol=symbol, limit=limit, **kwargs)
+    async def get_price_ticker(self, symbol: str, also_get_mini_ticker: bool = False, **kwargs: dict
+                               ) -> typing.Tuple[dict, dict]:
+        return await self.connector.get_price_ticker(
+            symbol=symbol, also_get_mini_ticker=also_get_mini_ticker, **kwargs)
 
-    async def get_price_ticker(self, symbol: str, **kwargs: dict) -> typing.Optional[dict]:
-        return await self.connector.get_price_ticker(symbol=symbol, **kwargs)
-
-    async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[list]:
+    async def get_all_currencies_price_ticker(self, **kwargs: dict) -> list:
         return await self.connector.get_all_currencies_price_ticker(**kwargs)
 
-    async def get_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> dict:
-        return await self.connector.get_order(symbol=symbol, order_id=order_id, **kwargs)
+    async def get_order(self, order_id: str, symbol: str = None,
+                        check_completeness: bool = True, **kwargs: dict) -> dict:
+        return await self.connector.get_order(symbol=symbol, order_id=order_id,
+                                              check_completeness=check_completeness, **kwargs)
 
-    async def get_order_from_open_and_closed_orders(self, order_id: str, symbol: str = None, **kwargs: dict) -> dict:
-        for order in await self.get_open_orders(symbol, **kwargs):
-            if order[enums.ExchangeConstantsOrderColumns.ID.value] == order_id:
-                return order
-        for order in await self.get_closed_orders(symbol, **kwargs):
-            if order[enums.ExchangeConstantsOrderColumns.ID.value] == order_id:
-                return order
-        return None  # OrderNotFound
+    def custom_get_order_stop_params(self, order_id, params) -> dict:
+        """
+        override if certain parameters are required to fetch stop orders
+        """
+        return params
 
-    async def get_order_from_trades(self, symbol, order_id, order_to_update=None):
-        order_to_update = order_to_update or {}
-        trades = await self.get_my_recent_trades(symbol)
-        # usually the right trade is within the last ones
-        for trade in trades[::-1]:
-            if trade[ecoc.ORDER.value] == order_id:
-                order_to_update[ecoc.INFO.value] = trade[ecoc.INFO.value]
-                order_to_update[ecoc.ID.value] = order_id
-                order_to_update[ecoc.SYMBOL.value] = symbol
-                order_to_update[ecoc.TYPE.value] = trade[ecoc.TYPE.value]
-                order_to_update[ecoc.AMOUNT.value] = trade[ecoc.AMOUNT.value]
-                order_to_update[ecoc.DATETIME.value] = trade[ecoc.DATETIME.value]
-                order_to_update[ecoc.SIDE.value] = trade[ecoc.SIDE.value]
-                order_to_update[ecoc.TAKER_OR_MAKER.value] = trade[ecoc.TAKER_OR_MAKER.value]
-                order_to_update[ecoc.PRICE.value] = trade[ecoc.PRICE.value]
-                order_to_update[ecoc.TIMESTAMP.value] = order_to_update.get(ecoc.TIMESTAMP.value,
-                                                                            trade[ecoc.TIMESTAMP.value])
-                order_to_update[ecoc.STATUS.value] = enums.OrderStatus.FILLED.value
-                order_to_update[ecoc.FILLED_AMOUNT.value] = trade[ecoc.AMOUNT.value]
-                order_to_update[ecoc.COST.value] = trade[ecoc.COST.value]
-                order_to_update[ecoc.REMAINING.value] = 0
-                order_to_update[ecoc.FEE.value] = trade[ecoc.FEE.value]
-                return order_to_update
-        return None  #OrderNotFound
+    def custom_get_all_orders_stop_params(self, params) -> dict:
+        """
+        override if certain parameters are required to fetch stop orders
+        """
+        return params
 
-    async def get_all_orders(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
-        return await self.connector.get_all_orders(symbol=symbol, since=since, limit=limit, **kwargs)
+    def custom_get_open_orders_stop_params(self, params) -> dict:
+        """
+        override if certain parameters are required to fetch stop orders
+        """
+        return params
 
-    async def get_open_orders(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
-        return await self.connector.get_open_orders(symbol=symbol, since=since, limit=limit, **kwargs)
+    def custom_get_closed_orders_stop_params(self, params) -> dict:
+        """
+        override if certain parameters are required to fetch stop orders
+        """
+        return params
 
-    async def get_closed_orders(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
-        return await self.connector.get_closed_orders(symbol=symbol, since=since, limit=limit, **kwargs)
+    def custom_edit_stop_orders_params(self, order_id, stop_price, params) -> dict:
+        """
+        override if certain parameters are required to edit stop orders
+        """
+        return params
+    
+    def custom_cancel_stop_orders_params(self, order_id, params) -> dict:
+        """
+        override if certain parameters are required to cancel stop orders
+        """
+        return params
 
-    async def get_my_recent_trades(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
-        return await self.connector.get_my_recent_trades(symbol=symbol, since=since, limit=limit, **kwargs)
+    async def get_all_orders(self, symbol: str = None, since: int = None, limit: int = None,
+                             check_completeness: bool = True, **kwargs: dict) -> list:
+        return await self.connector.get_all_orders(symbol=symbol, since=since, limit=limit,
+                                                   check_completeness=check_completeness, **kwargs)
+
+    async def get_open_orders(self, symbol: str = None, since: int = None, limit: int = None,
+                              check_completeness: bool = True, **kwargs: dict) -> list:
+        return await self.connector.get_open_orders(symbol=symbol, since=since, limit=limit,
+                                                    check_completeness=check_completeness, **kwargs)
+
+    async def get_closed_orders(self, symbol: str = None, since: int = None, limit: int = None,
+                                check_completeness: bool = True, **kwargs: dict) -> list:
+        return await self.connector.get_closed_orders(symbol=symbol, since=since, limit=limit,
+                                                      check_completeness=check_completeness, **kwargs)
+
+    async def get_my_recent_trades(self, symbol: str = None, since: int = None, limit: int = None,
+                                   check_completeness: bool = True, **kwargs: dict) -> list:
+        return await self.connector.get_my_recent_trades(symbol=symbol, since=since, limit=limit,
+                                                         check_completeness=check_completeness, **kwargs)
+
+    async def get_recent_trades(self, symbol: str, limit: int = 50, **kwargs: dict) -> list:
+        return await self.connector.get_recent_trades(symbol=symbol, limit=limit, **kwargs)
 
     async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> enums.OrderStatus:
         return await self.connector.cancel_order(symbol=symbol, order_id=order_id, **kwargs)
@@ -393,16 +405,7 @@ class CCXTExchangeCommons(exchanges_types.SpotExchange):
         return await self.connector.switch_to_account(account_type=account_type)
 
     def parse_balance(self, balance):
-        return personal_data.parse_decimal_portfolio(self.connector.parse_balance(balance))
-
-    def parse_trade(self, trade):
-        return self.connector.parse_trade(trade)
-
-    def parse_order(self, order):
-        return self.connector.parse_order(order)
-
-    def parse_ticker(self, ticker):
-        return self.connector.parse_ticker(ticker)
+        return self.connector.parse_balance(balance)
 
     def parse_ohlcv(self, ohlcv):
         return self.connector.parse_ohlcv(ohlcv)
@@ -419,26 +422,5 @@ class CCXTExchangeCommons(exchanges_types.SpotExchange):
     def parse_currency(self, currency):
         return self.connector.parse_currency(currency)
 
-    def parse_order_id(self, order):
-        return self.connector.parse_order_id(order)
-
-    def parse_order_symbol(self, order):
-        return self.connector.parse_order_symbol(order)
-
-    def parse_status(self, status):
-        return self.connector.parse_status(status)
-
-    def parse_side(self, side):
-        return self.connector.parse_side(side)
-
     def parse_account(self, account):
         return self.connector.parse_account(account)
-
-    def clean_recent_trade(self, recent_trade):
-        return self.connector.clean_recent_trade(recent_trade)
-
-    def clean_trade(self, trade):
-        return self.connector.clean_trade(trade)
-
-    def clean_order(self, order):
-        return self.connector.clean_order(order)

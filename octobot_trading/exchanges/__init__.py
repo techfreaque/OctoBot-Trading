@@ -56,8 +56,6 @@ from octobot_trading.exchanges.exchange_factory import (
     init_simulated_exchange,
 )
 from octobot_trading.exchanges.util import (
-    ExchangeMarketStatusFixer,
-    is_ms_valid,
     get_margin_exchange_class,
     get_future_exchange_class,
     get_spot_exchange_class,
@@ -176,8 +174,6 @@ __all__ = [
     "MarginExchange",
     "SpotExchange",
     "WebSocketExchange",
-    "ExchangeMarketStatusFixer",
-    "is_ms_valid",
     "AbstractWebsocketExchange",
     "BasicExchangeWrapper",
     "temporary_exchange_wrapper",

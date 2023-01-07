@@ -53,8 +53,6 @@ from octobot_trading.exchanges.util.exchange_util cimport (
     get_order_side,
 )
 from octobot_trading.exchanges.util cimport (
-    ExchangeMarketStatusFixer,
-    is_ms_valid,
     force_disable_web_socket,
     check_web_socket_config,
     search_websocket_class,
@@ -65,9 +63,8 @@ from octobot_trading.exchanges.types cimport (
     MarginExchange,
     SpotExchange,
 )
+
 from octobot_trading.exchanges.util cimport (
-    ExchangeMarketStatusFixer,
-    is_ms_valid,
     get_margin_exchange_class,
     get_future_exchange_class,
     get_spot_exchange_class,
@@ -135,8 +132,6 @@ __all__ = [
     "MarginExchange",
     "SpotExchange",
     "WebSocketExchange",
-    "ExchangeMarketStatusFixer",
-    "is_ms_valid",
     "AbstractWebsocketExchange",
     "force_disable_web_socket",
     "check_web_socket_config",

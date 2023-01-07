@@ -23,12 +23,17 @@ from octobot_trading.exchanges.connectors.ccxt import ccxt_exchange
 from octobot_trading.exchanges.connectors.ccxt.ccxt_exchange import (
     CCXTExchange,
 )
+from octobot_trading.exchanges.connectors import abstract_websocket_connector
 from octobot_trading.exchanges.connectors.abstract_websocket_connector import (
     AbstractWebsocketConnector,
 )
 from octobot_trading.exchanges.connectors.ccxt import ccxt_websocket_connector
 from octobot_trading.exchanges.connectors.ccxt.ccxt_websocket_connector import (
     CCXTWebsocketConnector,
+)
+from octobot_trading.exchanges.connectors import exchange_test_status
+from octobot_trading.exchanges.connectors.exchange_test_status import (
+    ExchangeTestStatus,
 )
 from octobot_trading.exchanges.connectors.cryptofeed import cryptofeed_websocket_connector
 from octobot_trading.exchanges.connectors.cryptofeed.cryptofeed_websocket_connector import (
@@ -41,4 +46,5 @@ __all__ = [
     "AbstractWebsocketConnector",
     "CCXTWebsocketConnector",
     "CryptofeedWebsocketConnector",
+    "ExchangeTestStatus",
 ]

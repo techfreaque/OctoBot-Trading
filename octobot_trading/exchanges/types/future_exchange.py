@@ -31,11 +31,9 @@ class FutureExchange(abstract_exchange.AbstractExchange):
 
     # Mark price params
     MARK_PRICE_IN_POSITION = False
-    MARK_PRICE_IN_TICKER = False
 
     # Funding rate params
     FUNDING_WITH_MARK_PRICE = False
-    FUNDING_IN_TICKER = False
 
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
@@ -56,11 +54,12 @@ class FutureExchange(abstract_exchange.AbstractExchange):
                 maintenance_margin_rate=await self.get_maintenance_margin_rate(pair),
             )
         except NotImplementedError:
+            positions = None
             try:
-                position = await self.get_position(pair)
-            except NotImplementedError:
-                position = await self.get_positions(symbols=[pair])
-            contracts.update_contracts_from_positions(self.exchange_manager, [position])
+                positions = [await self.get_position(pair)]
+            except (NotImplementedError, errors.NoPositionsFoundError):
+                positions = await self.get_positions()
+            contracts.update_contracts_from_positions(self.exchange_manager, positions)
 
     def create_pair_contract(self, pair, current_leverage, margin_type,
                              contract_type, position_mode, maintenance_margin_rate, maximum_leverage=None):
@@ -266,28 +265,6 @@ class FutureExchange(abstract_exchange.AbstractExchange):
     Parsers
     """
 
-    def parse_positions(self, positions) -> list:
-        """
-        :param positions: a list of positions dict to parse
-        :return: uniformized positions
-        """
-        return [self.parse_position(position) for position in positions]
-
-    def parse_position(self, position_dict) -> dict:
-        """
-        :param position_dict: the position dict
-        :return: the uniformized position dict
-        """
-        raise NotImplementedError("parse_position is not implemented")
-
-    def parse_funding(self, funding_dict, from_ticker=False) -> dict:
-        """
-        :param from_ticker: when True, the funding dict is extracted from ticker data
-        :param funding_dict: the funding dict
-        :return: the uniformized funding dict
-        """
-        raise NotImplementedError("parse_funding is not implemented")
-
     def parse_mark_price(self, mark_price_dict, from_ticker=False) -> dict:
         """
         :param from_ticker: when True, the mark price dict is extracted from ticker data
@@ -302,35 +279,3 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         :return: the uniformized liquidation dict
         """
         raise NotImplementedError("parse_liquidation is not implemented")
-
-    def parse_position_status(self, status):
-        """
-        :param status: the position raw status
-        :return: the uniformized position status
-        """
-        try:
-            return octobot_trading.enums.PositionStatus(status)
-        except ValueError:
-            return ValueError("Could not parse position status")
-
-    def parse_position_side(self, side, mode):
-        """
-        :param side: the raw side
-        :param mode: the parsed mode
-        :return: the uniformized PositionSide instance from the raw side
-        """
-        if mode is octobot_trading.enums.PositionMode.ONE_WAY:
-            return octobot_trading.enums.PositionSide.BOTH
-        return octobot_trading.enums.PositionSide.LONG \
-            if side == octobot_trading.enums.PositionSide.LONG.value else octobot_trading.enums.PositionSide.SHORT
-
-    def calculate_position_value(self, quantity, mark_price):
-        """
-        Calculates the position value
-        :param quantity: the position quantity
-        :param mark_price: the position symbol mark price
-        :return: the position value
-        """
-        if mark_price:
-            return quantity / mark_price
-        return 0

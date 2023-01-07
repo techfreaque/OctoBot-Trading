@@ -169,27 +169,24 @@ def test_update_from_raw(trader_simulator):
     order_inst = personal_data.Order(trader_inst)
     # binance example market order
     raw_order = {
-        'id': '362550114',
-        'clientOrderId': 'x-T9698eeeeeeeeeeeeee792',
-        'timestamp': 1637579281.377,
-        'datetime': '2021-11-22T11:08:01.377Z',
-        'lastTradeTimestamp': None,
-        'symbol': 'UNI/USDT',
-        'type': 'market',
-        'timeInForce': 'GTC',
-        'postOnly': False,
-        'side': 'sell',
-        'price': None,
-        'stopPrice': None,
-        'amount': 44964.0,
-        'cost': None,
-        'average': None,
-        'filled': 44964.0,
-        'remaining': 0.0,
-        'status': 'closed',
-        'fee': {'cost': 0.03764836, 'currency': 'USDT'},
-        'trades': [],
-        'fees': []
+        enums.ExchangeConstantsOrderColumns.ID.value: '362550114',
+        enums.ExchangeConstantsOrderColumns.TIMESTAMP.value: 1637579281,
+        enums.ExchangeConstantsOrderColumns.DATETIME.value: '2021-11-22T11:08:01.377Z',
+        enums.ExchangeConstantsOrderColumns.SYMBOL.value: 'UNI/USDT',
+        enums.ExchangeConstantsOrderColumns.TYPE.value: 
+            enums.TraderOrderType.SELL_MARKET.value,
+        enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: "taker",
+        enums.ExchangeConstantsOrderColumns.TIME_IN_FORCE.value: "GTC",
+        enums.ExchangeConstantsOrderColumns.SIDE.value: 'sell',
+        enums.ExchangeConstantsOrderColumns.PRICE.value: None,
+        enums.ExchangeConstantsOrderColumns.AMOUNT.value: decimal.Decimal("44964.0"),
+        enums.ExchangeConstantsOrderColumns.COST.value: None,
+        enums.ExchangeConstantsOrderColumns.FILLED_PRICE.value: None,
+        enums.ExchangeConstantsOrderColumns.FILLED_AMOUNT.value: decimal.Decimal("44964.0"),
+        enums.ExchangeConstantsOrderColumns.REMAINING.value: decimal.Decimal("0.0"),
+        enums.ExchangeConstantsOrderColumns.STATUS.value: 'closed',
+        enums.ExchangeConstantsOrderColumns.FEE.value: {'cost': decimal.Decimal("0.03764836"), 'currency': 'USDT'},
+        enums.ExchangeConstantsOrderColumns.TRADES.value: [],
     }
     assert order_inst.update_from_raw(raw_order) is True
     assert order_inst.order_type is enums.TraderOrderType.SELL_MARKET
@@ -207,35 +204,30 @@ def test_update_from_raw(trader_simulator):
     assert order_inst.filled_price == constants.ZERO
     assert order_inst.total_cost == constants.ZERO
     assert order_inst.created_last_price == constants.ZERO
-    assert order_inst.timestamp == 1637579281.377
+    assert order_inst.timestamp == 1637579281
     assert order_inst.canceled_time == 0
-    assert order_inst.executed_time == 1637579281.377
+    assert order_inst.executed_time == 1637579281
     assert order_inst.fee == {'cost': decimal.Decimal('0.03764836'), 'currency': 'USDT'}
 
     order_inst = personal_data.Order(trader_inst)
     # binance example limit order
     raw_order = {
-        'id': '362550114',
-        'clientOrderId': 'x-T9698eeeeeeeeeeeeee792',
-        'timestamp': 1637579281.377,
-        'datetime': '2021-11-22T11:08:01.377Z',
-        'lastTradeTimestamp': None,
-        'symbol': 'UNI/USDT',
-        'type': 'limit',
-        'timeInForce': 'GTC',
-        'postOnly': False,
-        'side': 'buy',
-        'price': 12.664,
-        'stopPrice': None,
-        'amount': 44964.0,
-        'cost': 123.6667,
-        'average': 13,
-        'filled': 44964.0,
-        'remaining': 0.0,
-        'status': 'closed',
-        'fee': {'cost': 0.03764836, 'currency': 'USDT'},
-        'trades': [],
-        'fees': []
+        enums.ExchangeConstantsOrderColumns.ID.value: '362550114',
+        enums.ExchangeConstantsOrderColumns.TIMESTAMP.value: 1637579281,
+        enums.ExchangeConstantsOrderColumns.SYMBOL.value: 'UNI/USDT',
+        enums.ExchangeConstantsOrderColumns.TYPE.value: 
+            enums.TraderOrderType.BUY_LIMIT.value,
+        enums.ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: "maker",
+        enums.ExchangeConstantsOrderColumns.TIME_IN_FORCE.value: "GTC",
+        enums.ExchangeConstantsOrderColumns.SIDE.value: 'buy',
+        enums.ExchangeConstantsOrderColumns.PRICE.value: decimal.Decimal("12.664"),
+        enums.ExchangeConstantsOrderColumns.AMOUNT.value: decimal.Decimal("44964.0"),
+        enums.ExchangeConstantsOrderColumns.COST.value: decimal.Decimal("123.6667"),
+        enums.ExchangeConstantsOrderColumns.FILLED_PRICE.value: decimal.Decimal("13"),
+        enums.ExchangeConstantsOrderColumns.FILLED_AMOUNT.value: decimal.Decimal("44964.0"),
+        enums.ExchangeConstantsOrderColumns.REMAINING.value: decimal.Decimal("0.0"),
+        enums.ExchangeConstantsOrderColumns.STATUS.value: 'closed',
+        enums.ExchangeConstantsOrderColumns.FEE.value: {'cost': decimal.Decimal("0.03764836"), 'currency': 'USDT'},
     }
     assert order_inst.update_from_raw(raw_order) is True
     assert order_inst.order_type is enums.TraderOrderType.BUY_LIMIT
@@ -253,9 +245,9 @@ def test_update_from_raw(trader_simulator):
     assert order_inst.filled_price == decimal.Decimal("13")
     assert order_inst.total_cost == decimal.Decimal("123.6667")
     assert order_inst.created_last_price == decimal.Decimal("12.664")
-    assert order_inst.timestamp == 1637579281.377
+    assert order_inst.timestamp == 1637579281
     assert order_inst.canceled_time == 0
-    assert order_inst.executed_time == 1637579281.377
+    assert order_inst.executed_time == 1637579281
     assert order_inst.fee == {'cost': decimal.Decimal('0.03764836'), 'currency': 'USDT'}
 
 

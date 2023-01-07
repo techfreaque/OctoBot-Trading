@@ -21,11 +21,12 @@ import pytest
 
 from tests import event_loop
 from octobot_commons.tests.test_config import load_test_config
-from octobot_trading.enums import TraderOrderType, OrderStatus, FeePropertyColumns
+from octobot_trading.enums import ExchangeConstantsMarketPropertyColumns, TradeOrderSide, TradeOrderType, TraderOrderType, OrderStatus, FeePropertyColumns
 from octobot_trading.constants import ZERO
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.personal_data.orders.order_factory import create_order_instance_from_raw
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
+from octobot_trading.enums import ExchangeConstantsOrderColumns
 
 from octobot_trading.personal_data.trades import create_trade_instance_from_raw, create_trade_from_order, \
     create_trade_instance
@@ -58,29 +59,29 @@ class TestTradeFactory:
 
     async def test_create_trade_instance_from_raw(self):
         _, exchange_manager, trader = await self.init_default()
-
-        raw_trade = json.loads(
-            """
-            {	
-              "info": {},
-              "id": "12345-67890:09876/54321",
-              "timestamp": 1502962946216,
-              "datetime": "2017-08-17 12:42:48.000",
-              "symbol": "ETH/BTC",
-              "order": "12345-67890:09876/54321",
-              "type": "limit",
-              "side": "buy",
-              "takerOrMaker": "taker",
-              "price": 0.06917684,
-              "amount": 1.5,
-              "cost": 0.10376526,
-              "fee": {
+        raw_trade = {	
+            ExchangeConstantsOrderColumns.ID.value: "12345-67890:09876/54321",
+            ExchangeConstantsOrderColumns.STATUS.value: OrderStatus.CLOSED.value,
+            ExchangeConstantsOrderColumns.TIMESTAMP.value: 1502962946,
+            ExchangeConstantsOrderColumns.SYMBOL.value: "ETH/BTC",
+            ExchangeConstantsOrderColumns.ORDER.value: "12345-67890:09876/54321",
+            ExchangeConstantsOrderColumns.TYPE.value: TraderOrderType.BUY_LIMIT.value,
+            ExchangeConstantsOrderColumns.SIDE.value: TradeOrderSide.BUY.value,
+            ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: ExchangeConstantsMarketPropertyColumns.MAKER.value,
+            ExchangeConstantsOrderColumns.PRICE.value: decimal.Decimal("0.06917684"),
+            ExchangeConstantsOrderColumns.AMOUNT.value: decimal.Decimal("1.5"),
+            ExchangeConstantsOrderColumns.COST.value: decimal.Decimal("0.10376526"),
+            ExchangeConstantsOrderColumns.FILLED_PRICE.value: decimal.Decimal("0.06917684"),
+            ExchangeConstantsOrderColumns.REMAINING.value: decimal.Decimal("0"),
+            ExchangeConstantsOrderColumns.FILLED_AMOUNT.value: decimal.Decimal("1.5"),
+            ExchangeConstantsOrderColumns.REDUCE_ONLY.value: None,
+            ExchangeConstantsOrderColumns.FEE.value: {
                 "cost": 0.0015,
                 "currency": "ETH",
                 "rate": 0.002
-              }
             }
-            """)
+        }
+
 
         trade = create_trade_instance_from_raw(trader, raw_trade)
 
@@ -92,10 +93,10 @@ class TestTradeFactory:
         assert trade.executed_quantity == decimal.Decimal(str(1.5))
         assert trade.origin_price == decimal.Decimal(str(0.06917684))
         assert trade.executed_price == decimal.Decimal(str(0.06917684))
-        assert trade.executed_time == 1502962946216
+        assert trade.executed_time == 1502962946
         assert trade.status == OrderStatus.FILLED
         assert trade.fee == {
-            FeePropertyColumns.COST.value: decimal.Decimal("0.0015"),
+            FeePropertyColumns.COST.value: 0.0015,
             FeePropertyColumns.CURRENCY.value: "ETH",
             FeePropertyColumns.RATE.value: 0.002
         }
@@ -108,31 +109,27 @@ class TestTradeFactory:
         _, exchange_manager, trader = await self.init_default()
 
         # limit order
-        raw_order = json.loads(
-            """
-            {
-                "id":                "12345-67890:09876/54321",
-                "datetime":          "2017-08-17 12:42:48.000",
-                "timestamp":          1502962946216,
-                "lastTradeTimestamp": 1502962956216,
-                "status":     "open",
-                "symbol":     "BTC/USDT",
-                "type":       "limit",
-                "side":       "sell",
-                "price":       7684,
-                "amount":      1.5,
-                "filled":      1.1,
-                "remaining":   0.4,
-                "cost":        0.076094524,
-                "trades":    [],
-                "fee": {
+        raw_order = {
+                ExchangeConstantsOrderColumns.ID.value:                "12345-67890:09876/54321",
+                ExchangeConstantsOrderColumns.TIMESTAMP.value:          1502962946,
+                ExchangeConstantsOrderColumns.STATUS.value:     "open",
+                ExchangeConstantsOrderColumns.SYMBOL.value:     "BTC/USDT",
+                ExchangeConstantsOrderColumns.TYPE.value: TraderOrderType.SELL_LIMIT.value,
+                ExchangeConstantsOrderColumns.SIDE.value:       "sell",
+                ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: "maker",
+                ExchangeConstantsOrderColumns.PRICE.value:       decimal.Decimal("7684"),
+                ExchangeConstantsOrderColumns.FILLED_PRICE.value:       decimal.Decimal("7684"),
+                ExchangeConstantsOrderColumns.AMOUNT.value:      decimal.Decimal("1.5"),
+                ExchangeConstantsOrderColumns.FILLED_AMOUNT.value:      decimal.Decimal("1.1"),
+                ExchangeConstantsOrderColumns.REMAINING.value:   decimal.Decimal("0.4"),
+                ExchangeConstantsOrderColumns.COST.value:        decimal.Decimal("0.076094524"),
+                ExchangeConstantsOrderColumns.FEE.value: {
                     "currency": "BTC",
                     "cost": 0.0009,
                     "rate": 0.002
-                },
-                "info": {}
+                }
             }
-            """)
+            
 
         order = create_order_instance_from_raw(trader, raw_order)
         order.tag = "tag"
@@ -161,27 +158,21 @@ class TestTradeFactory:
 
         # market order
         raw_order = {
-            'id': '362550114',
-            'clientOrderId': 'x-T9698eeeeeeeeeeeeee792',
-            'timestamp': 1637579281.377,
-            'datetime': '2021-11-22T11:08:01.377Z',
-            'lastTradeTimestamp': None,
-            'symbol': 'UNI/USDT',
-            'type': 'market',
-            'timeInForce': 'GTC',
-            'postOnly': False,
-            'side': 'sell',
-            'price': None,
-            'stopPrice': None,
-            'amount': 44964.0,
-            'cost': None,
-            'average': None,
-            'filled': 44964.0,
-            'remaining': 0.0,
-            'status': 'closed',
-            'fee': {'cost': 0.03764836, 'currency': 'USDT'},
-            'trades': [],
-            'fees': []
+            ExchangeConstantsOrderColumns.ID.value: '362550114',
+            ExchangeConstantsOrderColumns.TIMESTAMP.value: 1637579281,
+            ExchangeConstantsOrderColumns.SYMBOL.value: 'UNI/USDT',
+            ExchangeConstantsOrderColumns.TYPE.value: TraderOrderType.SELL_MARKET.value,
+            ExchangeConstantsOrderColumns.SIDE.value: 'sell',
+            ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: "taker",
+            ExchangeConstantsOrderColumns.PRICE.value: decimal.Decimal("4500"),
+            ExchangeConstantsOrderColumns.STOP_PRICE.value: None,
+            ExchangeConstantsOrderColumns.AMOUNT.value: decimal.Decimal(44964.0),
+            ExchangeConstantsOrderColumns.COST.value: None,
+            ExchangeConstantsOrderColumns.FILLED_PRICE.value: decimal.Decimal("4500"),
+            ExchangeConstantsOrderColumns.FILLED_AMOUNT.value: decimal.Decimal(44964.0),
+            ExchangeConstantsOrderColumns.REMAINING.value: decimal.Decimal(0.0),
+            ExchangeConstantsOrderColumns.STATUS.value: 'closed',
+            ExchangeConstantsOrderColumns.FEE.value: {'cost': 0.03764836, 'currency': 'USDT'},
         }
         order = create_order_instance_from_raw(trader, raw_order)
         trade = create_trade_from_order(order, close_status=OrderStatus.FILLED)
@@ -196,7 +187,7 @@ class TestTradeFactory:
         assert trade.origin_price == decimal.Decimal("4500")
         assert trade.executed_price == decimal.Decimal("4500")
         assert trade.status == OrderStatus.FILLED
-        assert trade.executed_time == 1637579281.377
+        assert trade.executed_time == 1637579281
         assert trade.is_closing_order is True
 
         await self.stop(exchange_manager)
@@ -204,31 +195,26 @@ class TestTradeFactory:
     async def test_create_trade_from_partially_filled_order(self):
         _, exchange_manager, trader = await self.init_default()
 
-        raw_order = json.loads(
-            """
-            {
-                "id":                "12345-67890:09876/54321",
-                "datetime":          "2017-08-17 12:42:48.000",
-                "timestamp":          1502962946216,
-                "lastTradeTimestamp": 1502962956216,
-                "status":     "open",
-                "symbol":     "BTC/USDT",
-                "type":       "limit",
-                "side":       "sell",
-                "price":       7684,
-                "amount":      1.5,
-                "filled":      1.1,
-                "remaining":   0.4,
-                "cost":        0.076094524,
-                "trades":    [],
-                "fee": {
+        raw_order =  {
+                ExchangeConstantsOrderColumns.ID.value:                "12345-67890:09876/54321",
+                ExchangeConstantsOrderColumns.TIMESTAMP.value:          1502962946,
+                ExchangeConstantsOrderColumns.STATUS.value:     "open",
+                ExchangeConstantsOrderColumns.SYMBOL.value:     "BTC/USDT",
+                ExchangeConstantsOrderColumns.TAKER_OR_MAKER.value: "maker",
+                ExchangeConstantsOrderColumns.TYPE.value: TraderOrderType.SELL_LIMIT.value,
+                ExchangeConstantsOrderColumns.SIDE.value:       "sell",
+                ExchangeConstantsOrderColumns.PRICE.value:       decimal.Decimal("7684"),
+                ExchangeConstantsOrderColumns.FILLED_PRICE.value:       decimal.Decimal("7684"),
+                ExchangeConstantsOrderColumns.AMOUNT.value:      decimal.Decimal("1.5"),
+                ExchangeConstantsOrderColumns.FILLED_AMOUNT.value:      decimal.Decimal("1.1"),
+                ExchangeConstantsOrderColumns.REMAINING.value:   decimal.Decimal("0.4"),
+                ExchangeConstantsOrderColumns.COST.value:        decimal.Decimal("0.076094524"),
+                ExchangeConstantsOrderColumns.FEE.value: {
                     "currency": "BTC",
                     "cost": 0.0009,
                     "rate": 0.002
-                },
-                "info": {}
+                }
             }
-            """)
 
         order = create_order_instance_from_raw(trader, raw_order)
         trade = create_trade_from_order(order, close_status=OrderStatus.OPEN)

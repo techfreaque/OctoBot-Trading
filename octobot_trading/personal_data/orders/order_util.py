@@ -25,7 +25,7 @@ import octobot_commons.timestamp_util as timestamp_util
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
-import octobot_trading.exchanges.util.exchange_market_status_fixer as exchange_market_status_fixer
+import octobot_trading.exchanges.parser.market_status_parser as market_status_parser
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 
 
@@ -39,7 +39,7 @@ def is_valid(element, key):
     :param key:
     :return:
     """
-    return key in element and exchange_market_status_fixer.is_ms_valid(element[key])
+    return key in element and market_status_parser.is_ms_valid(element[key])
 
 
 def get_min_max_amounts(symbol_market, default_value=None):
@@ -94,7 +94,7 @@ def check_cost(total_order_price, min_cost):
         => otherwise order is impossible as is => split order into smaller ones and returns the list
     => returns the quantity and price list of possible order(s)
     - if exchange symbol data are not enough
-        => try fixing exchange data using ExchangeMarketStatusFixer are start again (once only)
+        => try fixing exchange data using ExchangeMarketStatusParser are start again (once only)
     """
     if total_order_price < min_cost:
         if min_cost is None:
@@ -220,14 +220,6 @@ def get_fees_for_currency(fee, currency):
     if fee and fee[enums.FeePropertyColumns.CURRENCY.value] == currency:
         return decimal.Decimal(str(fee[enums.FeePropertyColumns.COST.value]))
     return constants.ZERO
-
-
-def parse_raw_fees(raw_fees):
-    fees = raw_fees
-    if fees and enums.ExchangeConstantsOrderColumns.COST.value in fees:
-        raw_fees[enums.ExchangeConstantsOrderColumns.COST.value] = \
-            decimal.Decimal(str(raw_fees[enums.ExchangeConstantsOrderColumns.COST.value]))
-    return fees
 
 
 def parse_order_status(raw_order):

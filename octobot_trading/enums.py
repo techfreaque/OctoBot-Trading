@@ -103,6 +103,7 @@ class PositionStatus(enum.Enum):
     LIQUIDATED = "liquidated"
     OPEN = "open"
     ADL = "auto_deleveraging"
+    CLOSED = "closed"
 
 
 class BlockchainTransactionStatus(enum.Enum):
@@ -198,8 +199,12 @@ class ExchangeFundingCCXTColumns(enum.Enum):
     FUNDING_RATE = "fundingRate"
     NEXT_FUNDING_TIME = "nextFundingTime"
     PREDICTED_FUNDING_RATE = "predictedFundingRate"
-
-
+    
+    
+class ExchangeOrderCCXTParameter(enum.Enum):
+    COST = "cost"
+    
+    
 class ExchangeOrderCCXTColumns(enum.Enum):
     INFO = "info"
     ID = "id"
@@ -413,6 +418,7 @@ class ExchangeConstantsPositionColumns(enum.Enum):
     MAINTENANCE_MARGIN_RATE = "maintenance_margin_rate"
     STATUS = "status"
     SIDE = "side"
+    ORIGINAL_SIDE = "original_side"
 
 
 class ExchangeConstantsLiquidationColumns(enum.Enum):

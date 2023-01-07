@@ -425,27 +425,6 @@ class AbstractExchange(util.Initializable):
         """
         raise NotImplementedError("parse_balance is not implemented")
 
-    def parse_trade(self, trade):
-        """
-        :param trade: the trade dict
-        :return: the uniformized trade dict
-        """
-        raise NotImplementedError("parse_trade is not implemented")
-
-    def parse_order(self, order):
-        """
-        :param order: the order dict
-        :return: the uniformized order dict
-        """
-        raise NotImplementedError("parse_order is not implemented")
-
-    def parse_ticker(self, ticker):
-        """
-        :param ticker: the ticker dict
-        :return: the uniformized ticker dict
-        """
-        raise NotImplementedError("parse_ticker is not implemented")
-
     def parse_ohlcv(self, ohlcv):
         """
         :param ohlcv: the ohlcv dict
@@ -485,68 +464,12 @@ class AbstractExchange(util.Initializable):
         """
         raise NotImplementedError("parse_currency is not implemented")
 
-    def parse_order_id(self, order):
-        """
-        :param order: the order dict
-        :return: the order id
-        """
-        raise NotImplementedError("parse_order_id is not implemented")
-
-    def parse_order_symbol(self, order):
-        """
-        :param order: the order dict
-        :return: the order symbol
-        """
-        raise NotImplementedError("parse_order_symbol is not implemented")
-
-    def parse_status(self, status):
-        """
-        :param status: the raw status
-        :return: the OrderStatus instance related to the row status
-        """
-        raise NotImplementedError("parse_status is not implemented")
-
-    def parse_side(self, side):
-        """
-        :param side: the raw side
-        :return: the TradeOrderSide related to the side
-        """
-        raise NotImplementedError("parse_side is not implemented")
-
     def parse_account(self, account):
         """
         :param account: the raw account
         :return: the AccountTypes related to the account
         """
         raise NotImplementedError("parse_account is not implemented")
-
-    """
-    Cleaners
-    """
-
-    def clean_recent_trade(self, recent_trade):
-        """
-        Clean the specified recent trade list
-        :param recent_trade: the recent trade list
-        :return: the cleaned recent trade list
-        """
-        raise NotImplementedError("clean_recent_trade is not implemented")
-
-    def clean_trade(self, trade):
-        """
-        Clean the specified trade dict
-        :param trade: the trade dict
-        :return: the cleaned trade dict
-        """
-        raise NotImplementedError("clean_trade is not implemented")
-
-    def clean_order(self, order):
-        """
-        Clean the specified order dict
-        :param order: the order dict
-        :return: the cleaned order dict
-        """
-        raise NotImplementedError("clean_order is not implemented")
 
     """
     Uniformization

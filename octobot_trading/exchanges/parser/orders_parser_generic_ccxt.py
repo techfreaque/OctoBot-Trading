@@ -124,7 +124,9 @@ class GenericCCXTOrdersParser(orders_parser_ccxt.CCXTOrdersParser):
         if missing_side_value:
             return missing_side_value
         if buyer_maker := (
-            self.raw_record[enums.ExchangeOrderCCXTColumns.INFO.value].get("isBuyerMaker")
+            self.raw_record[enums.ExchangeOrderCCXTColumns.INFO.value].get(
+                "isBuyerMaker"
+            )
         ):
             return enums.TradeOrderSide.BUY.value
         elif buyer_maker is False:

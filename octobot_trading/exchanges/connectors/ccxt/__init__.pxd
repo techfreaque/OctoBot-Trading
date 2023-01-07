@@ -18,14 +18,27 @@ from octobot_trading.exchanges.connectors.ccxt cimport ccxt_exchange
 from octobot_trading.exchanges.connectors.ccxt.ccxt_exchange cimport (
     CCXTExchange,
 )
-
 from octobot_trading.exchanges.connectors.ccxt cimport ccxt_websocket_connector
 from octobot_trading.exchanges.connectors.ccxt.ccxt_websocket_connector cimport (
     CCXTWebsocketConnector,
 )
-
+from octobot_trading.exchanges.connectors.ccxt cimport ccxt_exchange_ui_settings
+from octobot_trading.exchanges.connectors.ccxt.ccxt_exchange_ui_settings cimport (
+    initialize_experimental_exchange_settings,
+)
+from octobot_trading.exchanges.connectors.ccxt cimport exchange_settings_ccxt
+from octobot_trading.exchanges.connectors.ccxt.exchange_settings_ccxt cimport (
+    CCXTExchangeConfig,
+)
+from octobot_trading.exchanges.connectors.ccxt cimport exchange_settings_ccxt_generic
+from octobot_trading.exchanges.connectors.ccxt.exchange_settings_ccxt_generic cimport (
+    GenericCCXTExchangeConfig,
+)
 
 __all__ = [
     "CCXTExchange",
     "CCXTWebsocketConnector",
+    "initialize_experimental_exchange_settings",
+    "CCXTExchangeConfig",
+    "GenericCCXTExchangeConfig",
 ]

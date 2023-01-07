@@ -51,9 +51,33 @@ class OrderEditError(Exception):
     """
 
 
-class OrderCancelError(Exception):
+class OrderNotFoundError(Exception):
     """
-    Raised upon a failed order cancel
+    Raised when an order is not found
+    """
+
+
+class OrderStillUncanceledError(Exception):
+    """
+    Raised when a order is still open after cancellation
+    """
+
+
+class OrderCancelNotSupportedError(Exception):
+    """
+    Raised when a canceling a order is not supported
+    """
+
+
+class OrderCancelUnknownError(Exception):
+    """
+    Raised when a unknown order edit error happens
+    """
+
+
+class OrderToEditNotFoundError(Exception):
+    """
+    Raised when a order is not found when when sending the edit request
     """
 
 
@@ -119,6 +143,12 @@ class InvalidPositionSide(Exception):
 class InvalidPosition(Exception):
     """
     Raised when an invalid position is created
+    """
+
+
+class NoPositionsFoundError(Exception):
+    """
+    Raised when no position is found
     """
 
 

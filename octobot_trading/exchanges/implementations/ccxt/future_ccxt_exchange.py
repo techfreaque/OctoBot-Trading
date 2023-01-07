@@ -13,21 +13,20 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import decimal
-
-from octobot_trading.exchanges.implementations.ccxt import ccxt_exchange_commons
+import octobot_trading.exchanges.implementations.ccxt.ccxt_exchange_commons \
+    as ccxt_exchange_commons
 import octobot_trading.exchanges.types as exchanges_types
 import octobot_trading.enums as trading_enums
 
-#TODO remove
-class FutureCCXTExchange(exchanges_types.FutureExchange,
-                         ccxt_exchange_commons.CCXTExchangeCommons):
 
+class FutureCCXTExchange(exchanges_types.FutureExchange, 
+                         ccxt_exchange_commons.CCXTExchangeCommons):
+    
     def get_default_type(self):
         return 'future'
 
-    async def get_positions(self, symbols=None, **kwargs: dict) -> list:
-        return await self.connector.get_positions(symbols=symbols, **kwargs)
+    async def get_positions(self, **kwargs: dict) -> list:
+        return await self.connector.get_positions(**kwargs)
 
     async def get_position(self, symbol: str, **kwargs: dict) -> dict:
         return await self.connector.get_position(symbol=symbol, **kwargs)
@@ -71,52 +70,3 @@ class FutureCCXTExchange(exchanges_types.FutureExchange,
 
     def is_option_symbol(self, symbol):
         return self.get_pair_market_type(symbol, "option") == "True"
-
-    def parse_position(self, position_dict) -> dict:
-        try:
-            position_dict.update({
-                trading_enums.ExchangeConstantsPositionColumns.SYMBOL.value:
-                    position_dict.get(position_dict[trading_enums.ExchangePositionCCXTColumns.SYMBOL.value]),
-                trading_enums.ExchangeConstantsPositionColumns.TIMESTAMP.value:
-                    position_dict.get(trading_enums.ExchangePositionCCXTColumns.TIMESTAMP.value,
-                                      self.connector.get_exchange_current_time()),
-                trading_enums.ExchangeConstantsPositionColumns.SIDE.value:
-                    self.parse_position_side(
-                        position_dict.get(trading_enums.ExchangePositionCCXTColumns.SIDE.value,
-                                          trading_enums.PositionSide.UNKNOWN.value), None),
-                trading_enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value:
-                    position_dict.get(trading_enums.ExchangePositionCCXTColumns.MARGIN_TYPE.value, None),
-                trading_enums.ExchangeConstantsPositionColumns.POSITION_SIZE.value:
-                    decimal.Decimal(
-                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.CONTRACTS.value, 0)}"),
-                trading_enums.ExchangeConstantsPositionColumns.CONTRACT_SIZE.value:
-                    decimal.Decimal(
-                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.CONTRACT_SIZE.value, 0)}"),
-                trading_enums.ExchangeConstantsPositionColumns.COLLATERAL.value:
-                    decimal.Decimal(
-                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.COLLATERAL.value, 0)}"),
-                trading_enums.ExchangeConstantsPositionColumns.POSITION_VALUE.value:
-                    decimal.Decimal(
-                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.NOTIONAL.value, 0)}"),
-                trading_enums.ExchangeConstantsPositionColumns.LEVERAGE.value:
-                    decimal.Decimal(
-                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.LEVERAGE.value, 0)}"),
-                trading_enums.ExchangeConstantsPositionColumns.UNREALIZED_PNL.value:
-                    decimal.Decimal(
-                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.UNREALIZED_PNL.value, 0)}"),
-                trading_enums.ExchangeConstantsPositionColumns.REALIZED_PNL.value:
-                    decimal.Decimal(
-                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.REALIZED_PNL.value, 0)}"),
-                trading_enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value:
-                    decimal.Decimal(
-                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.LIQUIDATION_PRICE.value, 0)}"),
-                trading_enums.ExchangeConstantsPositionColumns.MARK_PRICE.value:
-                    decimal.Decimal(
-                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.MARK_PRICE.value, 0)}"),
-                trading_enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value:
-                    decimal.Decimal(
-                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.ENTRY_PRICE.value, 0)}"),
-            })
-        except KeyError as e:
-            self.logger.error(f"Fail to parse position dict ({e})")
-        return position_dict

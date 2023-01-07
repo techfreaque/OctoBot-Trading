@@ -1,3 +1,4 @@
+# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -13,11 +14,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.enums as enums
 
-
-def parse_position_status(raw_position):
-    try:
-        return enums.PositionStatus(raw_position[enums.ExchangeConstantsPositionColumns.STATUS.value])
-    except KeyError:
-        return None
+cdef class GenericCCXTExchangeConfig:
+    pass
