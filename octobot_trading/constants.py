@@ -117,6 +117,7 @@ TESTED_EXCHANGES = [
     "bybit",
     "phemex",
     "hollaex",
+    "binanceusdm"
     "mexc",
     "bingx",
     "coinex",
