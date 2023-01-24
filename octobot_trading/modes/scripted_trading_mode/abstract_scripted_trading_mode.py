@@ -47,6 +47,10 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
         if exchange_manager:
             # add config folder to importable files to import the user script
             tentacles_manager_api.import_user_tentacles_config_folder(self.exchange_manager.tentacles_setup_config)
+        else:
+            logging.get_logger(self.get_name()).error(
+                "At least one exchange must be enabled to use ScriptedTradingMode"
+                )
 
     def get_current_state(self) -> (str, float):
         return super().get_current_state()[0] if self.producers[0].state is None else self.producers[0].state.name, \
