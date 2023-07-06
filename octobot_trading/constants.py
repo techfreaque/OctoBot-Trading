@@ -104,6 +104,7 @@ FULL_CANDLE_HISTORY_EXCHANGES = [
     "mexc",
     "coinbase",
     "binanceus",
+    "mexc",
 ]
 
 DEFAULT_FUTURE_EXCHANGES = ["binanceusdm", "bybit"]
