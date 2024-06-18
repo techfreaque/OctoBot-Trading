@@ -44,9 +44,9 @@ class OrdersStorage(abstract_storage.AbstractStorage):
 
     def should_register_live_consumer(self):
         # live orders should only be stored on real trading
-        return self.should_store_date()
+        return self.should_store_data()
 
-    def should_store_date(self):
+    def should_store_data(self):
         return (
             (
                 self.ENABLE_SIMULATED_CURRENT_ORDERS_STORAGE
