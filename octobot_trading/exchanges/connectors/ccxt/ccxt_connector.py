@@ -754,6 +754,15 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
             await self.client.fetch_funding_rate_history(symbol=symbol, limit=limit, params=kwargs)
         )
 
+    async def get_open_interest_history(
+        self, symbol: str, time_frame: str, limit: int = 500, **kwargs: dict
+        ) -> list:
+        return self.adapter.adapt_open_interest(
+            await self.client.fetch_open_interest_history(
+                symbol=symbol, timeframe=time_frame, limit=limit, params=kwargs
+            )
+        )
+
     @ccxt_client_util.converted_ccxt_common_errors
     async def get_leverage_tiers(self, symbols: list = None, **kwargs: dict) -> dict:
         if self.client.has.get("fetchLeverageTiers"):

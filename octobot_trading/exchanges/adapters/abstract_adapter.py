@@ -111,6 +111,11 @@ class AbstractAdapter:
         return self.parse_funding_rate(fixed, **kwargs)
 
     @_adapter
+    def adapt_open_interest(self, raw, **kwargs):
+        fixed = self.fix_open_interest(raw, **kwargs)
+        return self.parse_open_interest(fixed, **kwargs)
+
+    @_adapter
     def adapt_leverage_tiers(self, raw, **kwargs):
         fixed = self.fix_leverage_tiers(raw, **kwargs)
         return self.parse_leverage_tiers(fixed, **kwargs) 
@@ -225,6 +230,13 @@ class AbstractAdapter:
 
     def parse_funding_rate(self, fixed, **kwargs):
         raise NotImplementedError("parse_funding_rate is not implemented")
+
+    def fix_open_interest(self, raw, **kwargs):
+        # add generic logic if necessary
+        return raw
+
+    def parse_open_interest(self, fixed, **kwargs):
+        return fixed
 
     def fix_leverage(self, raw, **kwargs):
         # add generic logic if necessary
