@@ -170,6 +170,7 @@ class PositionMode(enum.Enum):
 
 class ExchangeConstantsFundingColumns(enum.Enum):
     SYMBOL = "symbol"
+    TIMESTAMP = "timestamp"
     LAST_FUNDING_TIME = "last_funding_time"
     FUNDING_RATE = "funding_rate"
     NEXT_FUNDING_TIME = "next_funding_time"
@@ -329,6 +330,7 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     STOP_LOSS_PRICE = "stopLossPrice"
     TAKE_PROFIT_PRICE = "takeProfitPrice"
     TRIGGER_ABOVE = "triggerAbove"
+    TIME_IN_FORCE = "timeInForce"
     TAG = "tag"
     SELF_MANAGED = "self-managed"
     ENTRIES = "entries"
