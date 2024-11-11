@@ -205,7 +205,7 @@ INDIVIDUAL_ORDER_SYNC_TIMEOUT = 1 * commons_constants.MINUTE_TO_SECONDS
 MAX_TRADES_COUNT = int(os.getenv("MAX_TRADES_COUNT", "10000"))    # larger values can use a large part of ram
 
 # History
-DEFAULT_SAVED_HISTORICAL_TIMEFRAMES = [commons_enums.TimeFrames.ONE_DAY]
+DEFAULT_SAVED_HISTORICAL_TIMEFRAMES = [commons_enums.TimeFrames.ONE_HOUR]
 HISTORICAL_CANDLES_FETCH_DEFAULT_TIMEOUT = 30
 
 # 946742400 is 01/01/2000, if trade time is lower, there is an issue.
