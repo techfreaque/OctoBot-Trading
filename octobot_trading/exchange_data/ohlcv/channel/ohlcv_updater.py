@@ -240,7 +240,7 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
                     if last_candle and len(candles) > 1:
                         last_candle_timestamp, sleep_time = await self._refresh_current_candle(
                             time_frame, pair, candles, last_candle, last_candle_timestamp,
-                            iteration_candle_start_time, time_frame_seconds, attempt
+                            iteration_candle_start_time, time_frame_seconds, attempt, time_frame_sleep
                         )
                         updated_sleep_time = self._ensure_correct_sleep_time(
                             sleep_time, iteration_candle_start_time, time_frame_seconds
@@ -285,7 +285,7 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
 
     async def _refresh_current_candle(
         self, time_frame, pair, candles, last_candle, last_candle_timestamp,
-        iteration_candle_start_time, time_frame_seconds, attempt
+        iteration_candle_start_time, time_frame_seconds, attempt, time_frame_sleep
     ):
         current_candle_timestamp: float = last_candle[common_enums.PriceIndexes.IND_PRICE_TIME.value]
         should_sleep_time: float = current_candle_timestamp + time_frame_seconds - time.time()
@@ -293,12 +293,15 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
         # if we're trying to refresh the current candle => useless
         if last_candle_timestamp == current_candle_timestamp:
             if should_sleep_time < 0:
-                # up-to-date candle is not yet available on exchange: retry in a few seconds
-                should_sleep_time = self._ensure_correct_sleep_time(
-                    self._get_missing_candle_retry_sleep_time(attempt),
-                    iteration_candle_start_time,
-                    time_frame_seconds
-                )
+                if not await self.channel.exchange_manager.exchange.is_market_open(pair):
+                    should_sleep_time = time_frame_sleep if time_frame_sleep > 900 else 900
+                else:
+                    # up-to-date candle is not yet available on exchange: retry in a few seconds
+                    should_sleep_time = self._ensure_correct_sleep_time(
+                        self._get_missing_candle_retry_sleep_time(attempt),
+                        iteration_candle_start_time,
+                        time_frame_seconds
+                    )
             else:
                 should_sleep_time = self._ensure_correct_sleep_time(
                     should_sleep_time + time_frame_seconds + self._get_missing_candle_retry_sleep_time(attempt),

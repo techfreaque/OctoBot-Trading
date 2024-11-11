@@ -604,6 +604,9 @@ class RestExchange(abstract_exchange.AbstractExchange):
                                 **kwargs: dict) -> typing.Optional[list]:
         return await self.connector.get_symbol_prices(symbol=symbol, time_frame=time_frame, limit=limit, **kwargs)
 
+    async def is_market_open(self, symbol:str) -> bool:
+        return True
+
     async def get_kline_price(self, symbol: str, time_frame: commons_enums.TimeFrames,
                               **kwargs: dict) -> typing.Optional[list]:
         if self.DUMP_INCOMPLETE_LAST_CANDLE:

@@ -113,6 +113,9 @@ FULL_CANDLE_HISTORY_EXCHANGES = [
     "bingx",
     "hollaex",
     "htx",
+    "yahoofinance",
+    "huobi",
+    "huobipro",
     "kucoin",
     "kraken",
     "okcoin",
@@ -123,6 +126,8 @@ FULL_CANDLE_HISTORY_EXCHANGES = [
     "bitmart",
     "bitmex",
 ]
+
+ADDITIONAL_EXCHANGES = ["yahoofinance"]
 
 DEFAULT_FUTURE_EXCHANGES = ["binanceusdm", "bybit"]
 TESTED_EXCHANGES = [
