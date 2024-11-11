@@ -566,7 +566,8 @@ class Trader(util.Initializable):
                                  wait_for_cancelling=True,
                                  cancelling_timeout=octobot_trading.constants.INDIVIDUAL_ORDER_SYNC_TIMEOUT, 
                                  since: typing.Union[int, float] = octobot_trading.constants.NO_DATA_LIMIT, 
-                                 until: typing.Union[int, float] = octobot_trading.constants.NO_DATA_LIMIT
+                                 until: typing.Union[int, float] = octobot_trading.constants.NO_DATA_LIMIT,
+                                 tag: str = None
                                  ) -> (bool, list):
         """
         Should be called only if the goal is to cancel all open orders for a given symbol
@@ -581,7 +582,7 @@ class Trader(util.Initializable):
         """
         all_cancelled = True
         cancelled_orders = []
-        for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(since=since, until=until):
+        for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(since=since, until=until, tag=tag):
             if order.symbol == symbol and \
                     (side is None or order.side is side) and \
                     not (order.is_cancelled() or order.is_closed()) and \

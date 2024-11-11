@@ -50,34 +50,35 @@ class OrdersManager(util.Initializable):
 
     def get_all_orders(
         self, symbol=None, since=constants.NO_DATA_LIMIT, 
-        until=constants.NO_DATA_LIMIT, limit=constants.NO_DATA_LIMIT, tag=None):
+        until=constants.NO_DATA_LIMIT, limit=constants.NO_DATA_LIMIT,
+        tag=None, contains_tag=True):
         return self._select_orders(
             None, symbol=symbol, since=since,
-            until=until, limit=limit, tag=tag
+            until=until, limit=limit, tag=tag, contains_tag=contains_tag,
         )
 
     def get_open_orders(
         self, symbol=None, since=constants.NO_DATA_LIMIT, until=constants.NO_DATA_LIMIT,
-        limit=constants.NO_DATA_LIMIT, tag=None):
+        limit=constants.NO_DATA_LIMIT, tag=None, contains_tag=True):
         return self._select_orders(
             enums.OrderStatus.OPEN, symbol, since=since,
-            until=until, limit=limit, tag=tag
+            until=until, limit=limit, tag=tag, contains_tag=contains_tag,
         )
 
     def get_pending_cancel_orders(
         self, symbol=None, since=constants.NO_DATA_LIMIT, until=constants.NO_DATA_LIMIT,
-        limit=constants.NO_DATA_LIMIT, tag=None):
+        limit=constants.NO_DATA_LIMIT, tag=None, contains_tag=True):
         return self._select_orders(
             enums.OrderStatus.PENDING_CANCEL, symbol, since=since, 
-            until=until, limit=limit, tag=tag
+            until=until, limit=limit, tag=tag, contains_tag=contains_tag,
         )
 
     def get_closed_orders(
         self, symbol=None, since=constants.NO_DATA_LIMIT, until=constants.NO_DATA_LIMIT,
-        limit=constants.NO_DATA_LIMIT, tag=None):
+        limit=constants.NO_DATA_LIMIT, tag=None, contains_tag=True):
         return self._select_orders(
             enums.OrderStatus.CLOSED, symbol, since=since,
-            until=until, limit=limit, tag=tag
+            until=until, limit=limit, tag=tag, contains_tag=contains_tag,
         )
 
     def get_order(self, order_id, exchange_order_id=None):
@@ -249,7 +250,8 @@ class OrdersManager(util.Initializable):
 
     def _select_orders(
         self, state=None, symbol=None, since=constants.NO_DATA_LIMIT, 
-        until=constants.NO_DATA_LIMIT, limit=constants.NO_DATA_LIMIT, tag=None):
+        until=constants.NO_DATA_LIMIT, limit=constants.NO_DATA_LIMIT, tag=None,
+        contains_tag=True):
         orders = [
             order
             for order in self.orders.values()
@@ -258,7 +260,10 @@ class OrdersManager(util.Initializable):
                     (symbol is None or (symbol and order.symbol == symbol)) and
                     (since == constants.NO_DATA_LIMIT or (since and order.timestamp >= since)) and
                     (until == constants.NO_DATA_LIMIT or (until and order.timestamp <= until)) and
-                    (tag is None or order.tag == tag)
+                    (tag is None or (
+                        tag in order.tag
+                        if contains_tag and order.tag
+                        else order.tag == tag))
             )
         ]
         return orders if limit == constants.NO_DATA_LIMIT else orders[0:limit]
