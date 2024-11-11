@@ -36,6 +36,8 @@ class OrdersStorage(abstract_storage.AbstractStorage):
     HISTORICAL_OPEN_ORDERS_TABLE = commons_enums.DBTables.HISTORICAL_ORDERS_UPDATES.value
     ENABLE_HISTORICAL_ORDER_UPDATES_STORAGE = constants.ENABLE_HISTORICAL_ORDERS_UPDATES_STORAGE
     IS_MULTI_EXCHANGE_STORAGE = True   # set True when this storage is updating data from all other exchanges as well
+    ENABLE_SIMULATED_CURRENT_ORDERS_STORAGE = constants.ENABLE_SIMULATED_CURRENT_ORDERS_STORAGE
+    ENABLE_BACKTESTING_CURRENT_ORDERS_STORAGE = constants.ENABLE_BACKTESTING_CURRENT_ORDERS_STORAGE
 
     def __init__(self, exchange_manager, use_live_consumer_in_backtesting=None, is_historical=None):
         super().__init__(
@@ -46,8 +48,16 @@ class OrdersStorage(abstract_storage.AbstractStorage):
 
     def should_store_data(self):
         return (
-            constants.ENABLE_SIMULATED_ORDERS_STORAGE or not self.exchange_manager.is_trader_simulated
-        ) and not self.exchange_manager.is_backtesting
+            (
+                self.ENABLE_SIMULATED_CURRENT_ORDERS_STORAGE
+                and not self.exchange_manager.is_backtesting
+            )
+            or (not self.exchange_manager.is_trader_simulated)
+            or (
+                self.ENABLE_BACKTESTING_CURRENT_ORDERS_STORAGE
+                and self.exchange_manager.is_backtesting
+            )
+        )
 
     async def on_start(self):
         await self._load_startup_orders()
