@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import abc
+import asyncio
 import contextlib
 import decimal
 import copy
@@ -286,7 +287,9 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
                 )
             return user_commands_consumer
         except KeyError:
-            self.logger.debug(f"{services_channels.UserCommandsChannel.get_name()} unavailable")
+            await asyncio.sleep(2)
+            self.logger.warning(f"{services_channels.UserCommandsChannel.get_name()} unavailable, retry in 2 seconds")
+            return await self._create_user_input_consumer()
         except ImportError:
             self.logger.warning("Can't connect to services channels")
         return None
