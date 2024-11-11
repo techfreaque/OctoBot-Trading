@@ -158,8 +158,11 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
                 self.__class__.INITIALIZED_TRADING_PAIR_BY_BOT_ID[self.bot_id][self.exchange_manager.exchange_name][
                     symbol][time_frame] = initialized
 
-    def get_initialized_trading_pair_by_bot_id(self, symbol, time_frame):
+    def get_initialized_trading_pair_by_bot_id(self, symbol, time_frame=None):
         try:
+            if not time_frame:
+                return self.__class__.INITIALIZED_TRADING_PAIR_BY_BOT_ID[self.bot_id][self.exchange_manager.exchange_name][
+                    symbol]
             return self.__class__.INITIALIZED_TRADING_PAIR_BY_BOT_ID[self.bot_id][self.exchange_manager.exchange_name][
                     symbol][time_frame]
         except KeyError:
