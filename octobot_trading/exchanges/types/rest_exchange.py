@@ -1038,7 +1038,14 @@ class RestExchange(abstract_exchange.AbstractExchange):
 
     def supports_trading_type(self, symbol, trading_type: enums.FutureContractType):
         return self.connector.supports_trading_type(symbol, trading_type)
-
+    
+    def symbol_exists(self, symbol):
+        if self.exchange_manager.client_symbols is None:
+            self.logger.error(f"Failed to load available symbols from REST exchange, impossible to check if "
+                              f"{symbol} exists on {self.exchange.name}")
+            return False
+        return symbol in self.exchange_manager.client_symbols
+    
     def is_linear_symbol(self, symbol):
         """
         :param symbol: the symbol
