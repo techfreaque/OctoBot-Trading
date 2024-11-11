@@ -592,9 +592,13 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
                                 else enums.TraderOrderType.SELL_MARKET),
                     symbol=symbol,
                     quantity=decimal.Decimal(str(quantity)),
-                    price=decimal.Decimal(str(price)),
                     current_price=decimal.Decimal(str(current_price))
                 )
+                if not created_order:
+                    raise RuntimeError(
+                        "Failed to execute market order fallback "
+                        "for OrderImmediatelyFillable"
+                        )
                 created_order[enums.ExchangeConstantsOrderColumns.TYPE.value] = (
                     enums.TraderOrderType.STOP_LOSS.value
                     )
