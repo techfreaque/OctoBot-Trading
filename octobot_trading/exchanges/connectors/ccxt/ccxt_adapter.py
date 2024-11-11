@@ -370,7 +370,7 @@ class CCXTAdapter(adapters.AbstractAdapter):
                 ),
             enums.ExchangeConstantsFundingColumns.PREDICTED_FUNDING_RATE.value:
                 self.safe_decimal(
-                    fixed, ccxt_enums.ExchangeFundingCCXTColumns.FUNDING_RATE.value, constants.NaN
+                    fixed, ccxt_enums.ExchangeFundingCCXTColumns.PREDICTED_FUNDING_RATE.value, constants.NaN
                 ),
             enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value:
                 self.get_uniformized_timestamp(
