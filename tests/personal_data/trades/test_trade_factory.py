@@ -180,7 +180,7 @@ class TestTradeFactory:
             'timeInForce': 'GTC',
             'postOnly': False,
             'side': 'sell',
-            'price': None,
+            'price': 4500,
             'stopPrice': None,
             'amount': 44964.0,
             'cost': None,
