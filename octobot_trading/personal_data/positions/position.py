@@ -62,7 +62,7 @@ class Position(util.Initializable):
         self.fee_to_close = constants.ZERO
 
         # Size
-        self.quantity = constants.ZERO
+        self.single_contract_value = constants.ONE
         self.size = constants.ZERO
         self.already_reduced_size = constants.ZERO
         self.value = constants.ZERO
@@ -132,7 +132,7 @@ class Position(util.Initializable):
 
     def _update(self, position_id, exchange_position_id, symbol, currency, market, timestamp,
                 entry_price, mark_price, liquidation_price,
-                quantity, size, value, initial_margin, auto_deposit_margin,
+                single_contract_value, size, value, initial_margin, auto_deposit_margin,
                 unrealized_pnl, realised_pnl, fee_to_close,
                 status=None):
         changed: bool = False
@@ -158,8 +158,8 @@ class Position(util.Initializable):
                 self.creation_time = self.exchange_manager.exchange.get_uniformized_timestamp(timestamp)
             self.timestamp = self.creation_time
 
-        if self._should_change(self.quantity, quantity):
-            self.quantity = quantity
+        if self._should_change(self.single_contract_value, single_contract_value):
+            self.single_contract_value = single_contract_value
             changed = True
 
         if self._should_change(self.size, size):
@@ -207,7 +207,6 @@ class Position(util.Initializable):
         if self._should_change(self.status.value, status):
             self.status = enums.PositionStatus(status)
 
-        self._update_quantity_or_size_if_necessary()
         # update side after quantity as it relies on self.quantity
         self._update_side(
             not entry_price,
@@ -445,7 +444,6 @@ class Position(util.Initializable):
                 size_update, is_closing=self._is_update_closing(size_update),
                 update_price=self.mark_price, trigger_source=trigger_source)
         self._check_and_update_size(size_update)
-        self._update_quantity()
         self._update_side(True)
         if self.exchange_manager.is_simulated and not self.is_exclusively_using_exchange_position_details():
             margin_update = self._update_initial_margin()
@@ -500,19 +498,10 @@ class Position(util.Initializable):
             self.size += size_update
 
     def _update_quantity_or_size_if_necessary(self):
-        """
-        Set quantity from size if quantity is not set and size is set or update size
-        """
-        if self.quantity == constants.ZERO and self.size != constants.ZERO:
-            self._update_quantity()
-        elif self.size == constants.ZERO and self.quantity != constants.ZERO:
-            self.size = self.quantity * self.symbol_contract.current_leverage
+        raise NotImplementedError("_update_quantity_or_size_if_necessary not implemented")
 
     def _update_quantity(self):
-        """
-        Update position quantity from position quantity
-        """
-        self.quantity = self.size / self.symbol_contract.current_leverage
+        raise NotImplementedError("_update_quantity not implemented")
 
     def update_value(self):
         raise NotImplementedError("update_value not implemented")
@@ -684,7 +673,7 @@ class Position(util.Initializable):
         return self.side is enums.PositionSide.SHORT
 
     def is_idle(self):
-        return self.quantity == constants.ZERO
+        return self.size == constants.ZERO
 
     def get_quantity_to_close(self):
         """
@@ -755,7 +744,7 @@ class Position(util.Initializable):
             mark_price=raw_position.get(enums.ExchangeConstantsPositionColumns.MARK_PRICE.value, constants.ZERO),
             liquidation_price=raw_position.get(enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value,
                                                constants.ZERO),
-            quantity=raw_position.get(enums.ExchangeConstantsPositionColumns.QUANTITY.value, constants.ZERO),
+            single_contract_value=raw_position.get(enums.ExchangeConstantsPositionColumns.QUANTITY.value, constants.ONE),
             size=raw_position.get(enums.ExchangeConstantsPositionColumns.SIZE.value, constants.ZERO),
             value=raw_position.get(enums.ExchangeConstantsPositionColumns.NOTIONAL.value, constants.ZERO),
             initial_margin=raw_position.get(enums.ExchangeConstantsPositionColumns.INITIAL_MARGIN.value,
@@ -781,7 +770,7 @@ class Position(util.Initializable):
             enums.ExchangeConstantsPositionColumns.STATUS.value: self.status.value,
             enums.ExchangeConstantsPositionColumns.TIMESTAMP.value: self.timestamp,
             enums.ExchangeConstantsPositionColumns.SIDE.value: self.side.value,
-            enums.ExchangeConstantsPositionColumns.QUANTITY.value: self.quantity,
+            enums.ExchangeConstantsPositionColumns.QUANTITY.value: self.single_contract_value,
             enums.ExchangeConstantsPositionColumns.SIZE.value: self.size,
             enums.ExchangeConstantsPositionColumns.NOTIONAL.value: self.value,
             enums.ExchangeConstantsPositionColumns.INITIAL_MARGIN.value: self.initial_margin,
@@ -836,11 +825,11 @@ class Position(util.Initializable):
         """
         if self.symbol_contract.is_one_way_position_mode() or self.side is enums.PositionSide.UNKNOWN:
             changed_side = False
-            if self.quantity > constants.ZERO:
+            if self.size > constants.ZERO:
                 if self.side is not enums.PositionSide.LONG:
                     self.side = enums.PositionSide.LONG
                     changed_side = True
-            elif self.quantity < constants.ZERO:
+            elif self.size < constants.ZERO:
                 if self.side is not enums.PositionSide.SHORT:
                     self.side = enums.PositionSide.SHORT
                     changed_side = True
@@ -880,7 +869,7 @@ class Position(util.Initializable):
         self.entry_price = constants.ZERO
         self.exit_price = constants.ZERO
         self.mark_price = constants.ZERO
-        self.quantity = constants.ZERO
+        self.single_contract_value = constants.ONE
         self.size = constants.ZERO
         self.already_reduced_size = constants.ZERO
         self.value = constants.ZERO
@@ -916,7 +905,7 @@ class Position(util.Initializable):
         self.mark_price = other_position.mark_price
         self.liquidation_price = other_position.liquidation_price
         self.fee_to_close = other_position.fee_to_close
-        self.quantity = other_position.quantity
+        self.single_contract_value = other_position.single_contract_value
         self.size = other_position.size
         self.already_reduced_size = other_position.already_reduced_size
         self.value = other_position.value

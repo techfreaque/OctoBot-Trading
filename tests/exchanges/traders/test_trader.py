@@ -1064,9 +1064,11 @@ async def test_set_position_mode(future_trader_simulator_with_default_linear):
 
     position_inst = LinearPosition(trader_inst, contract)
     await position_inst.initialize()
-    position_inst.update_from_raw(
+    position_inst.update_from_raw( 
         {
-            ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
+            ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL,
+            ExchangeConstantsPositionColumns.SIZE.value: decimal.Decimal("1"),
+            
         }
     )
     exchange_manager_inst.exchange_personal_data.positions_manager.upsert_position_instance(position_inst)
@@ -1087,7 +1089,8 @@ async def test__has_open_position(future_trader_simulator_with_default_linear):
     await position_inst.initialize()
     position_inst.update_from_raw(
         {
-            ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
+                ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL,
+                ExchangeConstantsPositionColumns.SIZE.value: decimal.Decimal("1"),
         }
     )
     exchange_manager_inst.exchange_personal_data.positions_manager.upsert_position_instance(position_inst)
