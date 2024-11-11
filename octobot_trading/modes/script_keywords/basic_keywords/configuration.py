@@ -42,11 +42,11 @@ async def user_select_emit_trading_signals(ctx, identifier, def_val=False) -> bo
     return is_emitting_signals
 
 
-async def set_leverage(ctx, leverage):
+async def set_leverage(ctx, leverage, symbol=None):
     if ctx.exchange_manager.is_future:
         side = None
         try:
-            await ctx.exchange_manager.trader.set_leverage(ctx.symbol, side, decimal.Decimal(str(leverage)))
+            await ctx.exchange_manager.trader.set_leverage(symbol or ctx.symbol, side, decimal.Decimal(str(leverage)))
         except errors.ContractExistsError as e:
             ctx.logger.debug(str(e))
         except NotImplementedError as e:
@@ -61,8 +61,8 @@ async def set_leverage(ctx, leverage):
             )
 
 
-async def set_partial_take_profit_stop_loss(ctx, tp_sl_mode=enums.TakeProfitStopLossMode.PARTIAL.value):
+async def set_partial_take_profit_stop_loss(ctx, tp_sl_mode=enums.TakeProfitStopLossMode.PARTIAL.value, symbol: str = None):
     if ctx.exchange_manager.is_future:
         await ctx.exchange_manager.trader.set_symbol_take_profit_stop_loss_mode(
-            ctx.symbol, enums.TakeProfitStopLossMode(tp_sl_mode)
+            symbol or ctx.symbol, enums.TakeProfitStopLossMode(tp_sl_mode)
         )
