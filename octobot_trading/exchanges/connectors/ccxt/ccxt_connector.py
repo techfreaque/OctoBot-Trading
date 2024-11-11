@@ -830,7 +830,18 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
 
     def get_fees(self, symbol):
         try:
-            return ccxt_client_util.get_fees(self.client.market(symbol))
+            market_status = self.client.market(symbol)
+            return {
+                enums.ExchangeConstantsMarketPropertyColumns.TAKER.value:
+                    market_status.get(enums.ExchangeConstantsMarketPropertyColumns.TAKER.value,
+                                      ) or constants.CONFIG_DEFAULT_FEES,
+                enums.ExchangeConstantsMarketPropertyColumns.MAKER.value:
+                    market_status.get(enums.ExchangeConstantsMarketPropertyColumns.MAKER.value,
+                                      ) or constants.CONFIG_DEFAULT_FEES,
+                enums.ExchangeConstantsMarketPropertyColumns.FEE.value:
+                    market_status.get(enums.ExchangeConstantsMarketPropertyColumns.FEE.value,
+                                      ) or constants.CONFIG_DEFAULT_FEES
+            }
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except Exception as e:
