@@ -24,6 +24,8 @@ import octobot_trading.errors as errors
 import octobot_trading.constants as constants
 import octobot_trading.storage as storage
 import octobot_trading.enums as trading_enums
+import octobot_commons.constants as common_constants
+from octobot_trading.modes.script_keywords import context_management
 import octobot_trading.modes.script_keywords.basic_keywords as basic_keywords
 import octobot_trading.personal_data as trading_personal_data
 import octobot_trading.exchanges.util.exchange_util as exchange_util
@@ -244,3 +246,43 @@ async def notify_portfolio_optimization_complete():
         )
     except ImportError as e:
         logging.get_logger(__name__).exception(e, True, f"Impossible to send notification: {e}")
+
+async def get_run_analysis_plots(
+    trading_mode, exchange, symbol, analysis_settings, backtesting_id=None, 
+    optimizer_id=None, live_id=None, optimization_campaign=None
+    ):
+    ctx = context_management.Context.minimal(
+        trading_mode, logging.get_logger(trading_mode.get_name()), exchange, symbol,
+        backtesting_id, optimizer_id, optimization_campaign, 
+        analysis_settings, live_id=live_id)
+    # TODO: replace with RunAnalysis Mode/Evaluators Factory
+    # TODO add scripted RunAnalysis Mode which should be compatible with all trading modes
+    if hasattr(trading_mode, "BACKTESTING_SCRIPT_MODULE"):
+        return await trading_mode.get_script_from_module(
+        trading_mode.BACKTESTING_SCRIPT_MODULE)(ctx)
+    import tentacles.RunAnalysis.AnalysisMode.default_run_analysis_mode.run_analysis_mode as run_analysis_mode
+    return await run_analysis_mode.DefaultRunAnalysisMode().run_analysis_script(ctx)
+
+def get_run_analysis_settings(
+    get_live_settings=True,
+    get_backtesting_settings=True,
+    ):
+    # TODO add API
+    return {
+        "config": {
+            "LiveAnalysisModeSettings": {
+                "AnalysisModeSettings": {
+                    "ModeName": "DefaulRunAnalysisMode", "EnabledEvaluators": {}
+                    },
+                "AnalysisModeUserInputs": {}
+                }, 
+            "BacktestingAnalysisModeSettings": { 
+                "AnalysisModeSettings": {
+                    "ModeName": "DefaulRunAnalysisMode", "EnabledEvaluators": {}
+                    },
+                "AnalysisModeUserInputs": {}}, 
+            },
+        "schema": {
+            # json editor schema
+            }
+        }
