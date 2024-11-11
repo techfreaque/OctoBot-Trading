@@ -51,6 +51,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
     CONFIG_INIT_TIMEOUT = 1 * common_constants.MINUTE_TO_SECONDS    # let time for orders to be fetched before
     # declaring timeout at first trigger
     PRODUCER_LOCKS_BY_EXCHANGE_ID = {}  # use to identify exchange-wide actions
+    AVAILABLE_API_ACTIONS = []
 
     def __init__(self, channel, config, trading_mode, exchange_manager):
         super().__init__(channel)
