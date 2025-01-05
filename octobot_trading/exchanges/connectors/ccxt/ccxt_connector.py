@@ -572,18 +572,30 @@ class CCXTConnector(abstract_exchange.AbstractExchange):
 
     @ccxt_client_util.converted_ccxt_common_errors
     async def create_market_stop_loss_order(self, symbol, quantity, price, side, current_price, params=None) -> dict:
-        if self.client.has.get("createStopMarketOrder"):
+        if self.client.has.get("createStopMarketOrder") or self.client.has.get("createStopOrder"):
             try:
-                return self.adapter.adapt_order(
-                    await self.client.createStopMarketOrder(
-                        symbol,
-                        side=side,
-                        amount=quantity,
-                        stopPrice=price,
-                        params=params,
-                    ),
-                    symbol=symbol, quantity=quantity
-                )
+                if self.client.has.get("createStopMarketOrder"):
+                    return self.adapter.adapt_order(
+                        await self.client.createStopMarketOrder(
+                            symbol,
+                            side=side,
+                            amount=quantity,
+                            stopPrice=price,
+                            params=params,
+                        ),
+                        symbol=symbol, quantity=quantity
+                    )
+                elif self.client.has.get("createStopOrder"):
+                    return self.adapter.adapt_order(
+                        await self.client.createStopOrder(
+                            symbol,
+                            side=side,
+                            amount=quantity,
+                            stopPrice=price,
+                            params=params,
+                        ),
+                        symbol=symbol, quantity=quantity
+                    )
             except ccxt.OrderImmediatelyFillable:
                 # make sure stop always stops
                 created_order = await self.exchange_manager.exchange.create_order(
